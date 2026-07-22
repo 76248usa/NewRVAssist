@@ -49,3 +49,57 @@ export async function checkNativeLidarAvailability(): Promise<NativeLidarAvailab
     );
   }
 }
+export type NativeCenterDepthReadingResult = {
+  status: "success" | "native-module-missing" | "error";
+  depthMeters: number | null;
+  depthInches: number | null;
+  roundedInches: number | null;
+  frameTimestamp?: number;
+  frameCountAfterRequest?: number;
+  message: string;
+};
+
+export async function getNativeCenterDepthReading(): Promise<NativeCenterDepthReadingResult> {
+  try {
+    const rvLidarModule = requireNativeModule("RvLidar") as {
+      getCenterDepthReading?: () => Promise<NativeCenterDepthReadingResult>;
+    };
+
+    if (typeof rvLidarModule.getCenterDepthReading !== "function") {
+      return {
+        status: "native-module-missing",
+        depthMeters: null,
+        depthInches: null,
+        roundedInches: null,
+        message:
+          "The installed iPhone build does not include getCenterDepthReading yet. Rebuild and reinstall the development build.",
+      };
+    }
+
+    const result = await rvLidarModule.getCenterDepthReading();
+
+    if (!result) {
+      return {
+        status: "error",
+        depthMeters: null,
+        depthInches: null,
+        roundedInches: null,
+        message:
+          "The native LiDAR function returned no result. The installed build may still be old.",
+      };
+    }
+
+    return result;
+  } catch (error) {
+    return {
+      status: "error",
+      depthMeters: null,
+      depthInches: null,
+      roundedInches: null,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Real center depth reading failed with an unknown native error.",
+    };
+  }
+}

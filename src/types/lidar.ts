@@ -1,4 +1,4 @@
-export type DistanceSource = "manual" | "lidar";
+export type DistanceSource = "manual" | "test-lidar" | "real-lidar";
 
 export type LidarClearanceReading = {
   left: number | null;

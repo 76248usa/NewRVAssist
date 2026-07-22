@@ -462,6 +462,7 @@ export default function Index() {
         stopRecoveryConfirmed={stopRecoveryConfirmed}
         onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
       />
+
       <LidarReadinessCard
         manualModeActive={true}
         clearanceValues={clearanceValues}
@@ -469,7 +470,17 @@ export default function Index() {
         stopRecoveryConfirmed={stopRecoveryConfirmed}
         onApplyTestReading={(values) => {
           setClearanceValues(values);
-          setDistanceSource("lidar");
+          setDistanceSource("test-lidar");
+          setStopRecoveryConfirmed(false);
+        }}
+        onApplyRealLidarReading={(values) => {
+          setClearanceValues({
+            left: values.left,
+            right: values.right,
+            rear: values.rear,
+            roof: values.roof,
+          });
+          setDistanceSource("real-lidar");
           setStopRecoveryConfirmed(false);
         }}
         onClearTestReading={() => {
@@ -483,7 +494,6 @@ export default function Index() {
           setStopRecoveryConfirmed(false);
         }}
       />
-
       <GuidanceCard
         currentStep={currentStep}
         stepIndex={safeStepIndex}
