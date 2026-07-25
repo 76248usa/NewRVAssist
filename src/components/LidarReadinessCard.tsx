@@ -25,6 +25,7 @@ import {
   RealLidarPreflightResult,
   requestRealLidarCameraPermission,
 } from "../utils/realLidarPreflight";
+
 type Props = {
   manualModeActive?: boolean;
   distanceSource: DistanceSource;
@@ -234,7 +235,6 @@ function LidarStatusRow({ label, value, status }: LidarStatusRowProps) {
     </View>
   );
 }
-
 export function LidarReadinessCard({
   manualModeActive = true,
   distanceSource,
@@ -259,6 +259,21 @@ export function LidarReadinessCard({
   const [checkingCenterDepth, setCheckingCenterDepth] = useState(false);
   const [hasRealLidarRearReading, setHasRealLidarRearReading] = useState(false);
   const [liveRearDistanceActive, setLiveRearDistanceActive] = useState(false);
+  const [liveVoiceEnabled, setLiveVoiceEnabled] = useState(true);
+  const liveRearDistanceActiveRef = useRef(false);
+  const liveVoiceEnabledRef = useRef(true);
+  const [liveSafetyConfirmed, setLiveSafetyConfirmed] = useState(false);
+  const [realLidarRefreshCount, setRealLidarRefreshCount] = useState(0);
+  const [lastAppliedRearInches, setLastAppliedRearInches] = useState<
+    string | null
+  >(null);
+  const [previousRearInches, setPreviousRearInches] = useState<number | null>(
+    null,
+  );
+  const [rearDistanceTrend, setRearDistanceTrend] = useState<
+    "closer" | "farther" | "steady" | "unknown"
+  >("unknown");
+
   const liveRearDistanceTimerRef = useRef<ReturnType<
     typeof setInterval
   > | null>(null);
@@ -267,10 +282,7 @@ export function LidarReadinessCard({
     null,
   );
   const lastLiveVoiceTimeRef = useRef(0);
-  const [realLidarRefreshCount, setRealLidarRefreshCount] = useState(0);
-  const [lastAppliedRearInches, setLastAppliedRearInches] = useState<
-    string | null
-  >(null);
+
   useEffect(() => {
     return () => {
       if (liveRearDistanceTimerRef.current) {
@@ -279,6 +291,15 @@ export function LidarReadinessCard({
       }
     };
   }, []);
+
+  useEffect(() => {
+    liveRearDistanceActiveRef.current = liveRearDistanceActive;
+  }, [liveRearDistanceActive]);
+
+  useEffect(() => {
+    liveVoiceEnabledRef.current = liveVoiceEnabled;
+  }, [liveVoiceEnabled]);
+
   const distanceSourceLabel = getDistanceSourceLabel(distanceSource);
   const bridgeStatusLabel = getBridgeStatusLabel(bridgeStatus);
 
@@ -324,6 +345,17 @@ export function LidarReadinessCard({
   const levelStyles = getLevelStyles(currentWorstLevel);
   const warningReason = getSpecificWarningReason(clearanceItems);
 
+  const liveRearDistanceNumber = parseDistance(clearanceValues.rear);
+  const liveRearDistanceLevel = getClearanceLevel(liveRearDistanceNumber);
+  const liveRearDistanceStyles = getLevelStyles(liveRearDistanceLevel);
+
+  const liveRearDistanceLabel =
+    liveRearDistanceLevel === "stop"
+      ? "STOP"
+      : liveRearDistanceLevel === "caution"
+        ? "CAUTION"
+        : "SAFE";
+
   const applyTestLidarReading = (
     label: string,
     reading: LidarClearanceReading,
@@ -338,6 +370,171 @@ export function LidarReadinessCard({
     if (bridgeResult.clearanceValues) {
       onApplyTestReading?.(bridgeResult.clearanceValues);
     }
+  };
+
+  const speakLiveRearDistanceWarning = (
+    rearInches: number,
+    level: "safe" | "caution" | "stop",
+  ) => {
+    const now = Date.now();
+
+    const sameLevelRecently =
+      lastLiveVoiceLevelRef.current === level &&
+      now - lastLiveVoiceTimeRef.current < 6000;
+
+    if (sameLevelRecently) {
+      return;
+    }
+
+    lastLiveVoiceLevelRef.current = level;
+    lastLiveVoiceTimeRef.current = now;
+
+    if (level === "stop") {
+      Speech.stop();
+      Speech.speak(
+        `Stop. Rear clearance is ${rearInches} inches. Get out and inspect before moving.`,
+      );
+      return;
+    }
+
+    if (level === "caution") {
+      Speech.stop();
+      Speech.speak(
+        `Caution. Rear clearance is ${rearInches} inches. Move in inches, not feet.`,
+      );
+    }
+  };
+
+  const readRealLidarRearDistance = async () => {
+    try {
+      setCheckingCenterDepth(true);
+
+      const result = await getNativeCenterDepthReading();
+
+      setCenterDepthReading(result);
+
+      if (result.status !== "success") {
+        setBridgeStatus("not-connected");
+        setBridgeMessage(result.message);
+        return;
+      }
+
+      if (result.roundedInches === null) {
+        setBridgeStatus("not-connected");
+        setBridgeMessage(
+          "Real LiDAR returned a successful result, but no rounded distance was received.",
+        );
+        return;
+      }
+
+      const rearInches = String(result.roundedInches);
+
+      const realLidarClearanceValues: ClearanceValues = {
+        left: "",
+        right: "",
+        rear: rearInches,
+        roof: "",
+      };
+
+      const rearDistanceNumber = result.roundedInches;
+      const rearLevel = getClearanceLevel(rearDistanceNumber);
+
+      if (previousRearInches === null) {
+        setRearDistanceTrend("unknown");
+      } else {
+        const difference = rearDistanceNumber - previousRearInches;
+
+        if (difference <= -2) {
+          setRearDistanceTrend("closer");
+        } else if (difference >= 2) {
+          setRearDistanceTrend("farther");
+        } else {
+          setRearDistanceTrend("steady");
+        }
+      }
+
+      setPreviousRearInches(rearDistanceNumber);
+
+      if (liveRearDistanceActiveRef.current) {
+        speakLiveRearDistanceWarning(rearDistanceNumber, rearLevel);
+      }
+
+      setLastAppliedRearInches(rearInches);
+      setRealLidarRefreshCount((count) => count + 1);
+
+      onApplyRealLidarReading?.({
+        left: realLidarClearanceValues.left,
+        right: realLidarClearanceValues.right,
+        rear: realLidarClearanceValues.rear,
+        roof: realLidarClearanceValues.roof,
+      });
+
+      setHasRealLidarRearReading(true);
+      setBridgeStatus("reading");
+      setBridgeMessage(
+        `Rear clearance refreshed from Real LiDAR: ${rearInches} inches.`,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Real center depth reading failed before a native result was returned.";
+
+      setCenterDepthReading({
+        status: "error",
+        depthMeters: null,
+        depthInches: null,
+        roundedInches: null,
+        message,
+      });
+
+      setBridgeStatus("not-connected");
+      setBridgeMessage(message);
+    } finally {
+      setCheckingCenterDepth(false);
+    }
+  };
+
+  const startLiveRearDistance = () => {
+    if (liveRearDistanceTimerRef.current) {
+      return;
+    }
+
+    lastLiveVoiceLevelRef.current = null;
+    lastLiveVoiceTimeRef.current = 0;
+    liveRearDistanceActiveRef.current = true;
+    setLiveRearDistanceActive(true);
+
+    liveRearDistanceTimerRef.current = setInterval(async () => {
+      if (liveReadingInProgressRef.current) {
+        return;
+      }
+
+      try {
+        liveReadingInProgressRef.current = true;
+        await readRealLidarRearDistance();
+      } finally {
+        liveReadingInProgressRef.current = false;
+      }
+    }, 500);
+  };
+
+  const stopLiveRearDistance = () => {
+    if (liveRearDistanceTimerRef.current) {
+      clearInterval(liveRearDistanceTimerRef.current);
+      liveRearDistanceTimerRef.current = null;
+    }
+
+    Speech.stop();
+    lastLiveVoiceLevelRef.current = null;
+    lastLiveVoiceTimeRef.current = 0;
+
+    liveReadingInProgressRef.current = false;
+    liveRearDistanceActiveRef.current = false;
+    setLiveRearDistanceActive(false);
+
+    setPreviousRearInches(null);
+    setRearDistanceTrend("unknown");
   };
 
   const clearTestLidarReading = () => {
@@ -424,148 +621,6 @@ export function LidarReadinessCard({
     }
   };
 
-  const speakLiveRearDistanceWarning = (
-    rearInches: number,
-    level: "safe" | "caution" | "stop",
-  ) => {
-    const now = Date.now();
-
-    // Do not repeat the same level too often.
-    const sameLevelRecently =
-      lastLiveVoiceLevelRef.current === level &&
-      now - lastLiveVoiceTimeRef.current < 6000;
-
-    if (sameLevelRecently) {
-      return;
-    }
-
-    lastLiveVoiceLevelRef.current = level;
-    lastLiveVoiceTimeRef.current = now;
-
-    if (level === "stop") {
-      Speech.stop();
-      Speech.speak(
-        `Stop. Rear clearance is ${rearInches} inches. Get out and inspect before moving.`,
-      );
-      return;
-    }
-
-    if (level === "caution") {
-      Speech.stop();
-      Speech.speak(
-        `Caution. Rear clearance is ${rearInches} inches. Move in inches, not feet.`,
-      );
-    }
-  };
-
-  const readRealLidarRearDistance = async () => {
-    try {
-      setCheckingCenterDepth(true);
-
-      const result = await getNativeCenterDepthReading();
-
-      setCenterDepthReading(result);
-
-      if (result.status !== "success") {
-        setBridgeStatus("not-connected");
-        setBridgeMessage(result.message);
-        return;
-      }
-
-      if (result.roundedInches === null) {
-        setBridgeStatus("not-connected");
-        setBridgeMessage(
-          "Real LiDAR returned a successful result, but no rounded distance was received.",
-        );
-        return;
-      }
-      const rearInches = String(result.roundedInches);
-
-      const realLidarClearanceValues: ClearanceValues = {
-        left: "",
-        right: "",
-        rear: rearInches,
-        roof: "",
-      };
-
-      const rearDistanceNumber = result.roundedInches;
-      const rearLevel = getClearanceLevel(rearDistanceNumber);
-
-      if (liveRearDistanceActive) {
-        speakLiveRearDistanceWarning(rearDistanceNumber, rearLevel);
-      }
-      setLastAppliedRearInches(rearInches);
-      setRealLidarRefreshCount((count) => count + 1);
-
-      onApplyRealLidarReading?.({
-        left: realLidarClearanceValues.left,
-        right: realLidarClearanceValues.right,
-        rear: realLidarClearanceValues.rear,
-        roof: realLidarClearanceValues.roof,
-      });
-
-      setHasRealLidarRearReading(true);
-      setBridgeStatus("reading");
-      setBridgeMessage(
-        `Rear clearance refreshed from Real LiDAR: ${rearInches} inches.`,
-      );
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Real center depth reading failed before a native result was returned.";
-
-      setCenterDepthReading({
-        status: "error",
-        depthMeters: null,
-        depthInches: null,
-        roundedInches: null,
-        message,
-      });
-
-      setBridgeStatus("not-connected");
-      setBridgeMessage(message);
-    } finally {
-      setCheckingCenterDepth(false);
-    }
-  };
-
-  const startLiveRearDistance = () => {
-    if (liveRearDistanceTimerRef.current) {
-      return;
-    }
-
-    lastLiveVoiceLevelRef.current = null;
-    lastLiveVoiceTimeRef.current = 0;
-
-    setLiveRearDistanceActive(true);
-
-    liveRearDistanceTimerRef.current = setInterval(async () => {
-      if (liveReadingInProgressRef.current) {
-        return;
-      }
-
-      try {
-        liveReadingInProgressRef.current = true;
-        await readRealLidarRearDistance();
-      } finally {
-        liveReadingInProgressRef.current = false;
-      }
-    }, 1000);
-  };
-
-  const stopLiveRearDistance = () => {
-    if (liveRearDistanceTimerRef.current) {
-      clearInterval(liveRearDistanceTimerRef.current);
-      liveRearDistanceTimerRef.current = null;
-    }
-    Speech.stop();
-    lastLiveVoiceLevelRef.current = null;
-    lastLiveVoiceTimeRef.current = 0;
-
-    liveReadingInProgressRef.current = false;
-    setLiveRearDistanceActive(false);
-  };
   return (
     <View
       style={{
@@ -938,6 +993,43 @@ export function LidarReadinessCard({
               }
             </Text>
 
+            <View
+              style={{
+                marginTop: 10,
+                padding: 10,
+                borderRadius: 12,
+                backgroundColor: "#fef3c7",
+                borderWidth: 1,
+                borderColor: "#f59e0b",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "900",
+                  color: "#92400e",
+                  marginBottom: 4,
+                  textAlign: "center",
+                }}
+              >
+                LiDAR Spotter Mode
+              </Text>
+
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: "#92400e",
+                  lineHeight: 16,
+                  textAlign: "center",
+                }}
+              >
+                {
+                  "Use this as a spotter or campsite pre-scan aid. Move slowly. Phone aim and LiDAR delay can affect readings. Always confirm visually before backing."
+                }
+              </Text>
+            </View>
+
             <TouchableOpacity
               onPress={handleCheckRealLidarReadiness}
               disabled={checkingRealLidar}
@@ -1117,15 +1209,16 @@ export function LidarReadinessCard({
               <>
                 <TouchableOpacity
                   onPress={readRealLidarRearDistance}
-                  disabled={checkingCenterDepth}
+                  disabled={checkingCenterDepth || liveRearDistanceActive}
                   style={{
                     marginTop: 10,
                     paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 12,
-                    backgroundColor: checkingCenterDepth
-                      ? "#94a3b8"
-                      : "#16a34a",
+                    backgroundColor:
+                      checkingCenterDepth || liveRearDistanceActive
+                        ? "#94a3b8"
+                        : "#16a34a",
                     alignItems: "center",
                   }}
                 >
@@ -1134,16 +1227,18 @@ export function LidarReadinessCard({
                       color: "white",
                       fontSize: 12,
                       fontWeight: "900",
+                      textAlign: "center",
                     }}
                   >
-                    {checkingCenterDepth
-                      ? "Reading Depth..."
-                      : hasRealLidarRearReading
-                        ? "Refresh Real LiDAR Rear Distance"
-                        : "Use Real LiDAR as Rear Distance"}
+                    {liveRearDistanceActive
+                      ? "Live Rear Distance Running"
+                      : checkingCenterDepth
+                        ? "Reading Depth..."
+                        : hasRealLidarRearReading
+                          ? "Refresh Real LiDAR Rear Distance"
+                          : "Use Real LiDAR as Rear Distance"}
                   </Text>
                 </TouchableOpacity>
-
                 <Text
                   style={{
                     marginTop: 7,
@@ -1158,149 +1253,311 @@ export function LidarReadinessCard({
                     "Point the camera at the rear obstacle and tap refresh as you move slowly."
                   }
                 </Text>
-              </>
-            ) : null}
 
-            <View
-              style={{
-                marginTop: 9,
-                flexDirection: "row",
-                gap: 8,
-                justifyContent: "center",
-              }}
-            >
-              <TouchableOpacity
-                onPress={startLiveRearDistance}
-                disabled={liveRearDistanceActive}
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  paddingHorizontal: 10,
-                  borderRadius: 12,
-                  backgroundColor: liveRearDistanceActive
-                    ? "#94a3b8"
-                    : "#2563eb",
-                  alignItems: "center",
-                }}
-              >
-                <Text
+                <TouchableOpacity
+                  onPress={() => setLiveSafetyConfirmed((value) => !value)}
                   style={{
-                    color: "white",
-                    fontSize: 11,
-                    fontWeight: "900",
-                    textAlign: "center",
-                  }}
-                >
-                  Start Live Rear Distance
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={stopLiveRearDistance}
-                disabled={!liveRearDistanceActive}
-                style={{
-                  flex: 1,
-                  paddingVertical: 10,
-                  paddingHorizontal: 10,
-                  borderRadius: 12,
-                  backgroundColor: liveRearDistanceActive
-                    ? "#dc2626"
-                    : "#94a3b8",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 11,
-                    fontWeight: "900",
-                    textAlign: "center",
-                  }}
-                >
-                  Stop Live Rear Distance
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <Text
-              style={{
-                marginTop: 7,
-                fontSize: 11,
-                fontWeight: "800",
-                color: liveRearDistanceActive ? "#166534" : "#475569",
-                textAlign: "center",
-                lineHeight: 16,
-              }}
-            >
-              {liveRearDistanceActive
-                ? "Live rear distance is running. The app refreshes about once per second."
-                : "Live mode is off. Use refresh manually or start live rear distance."}
-            </Text>
-            {centerDepthReading ? (
-              <View
-                style={{
-                  marginTop: 10,
-                  padding: 10,
-                  borderRadius: 10,
-                  backgroundColor:
-                    centerDepthReading.status === "success"
+                    marginTop: 10,
+                    paddingVertical: 12,
+                    paddingHorizontal: 12,
+                    borderRadius: 12,
+                    backgroundColor: liveSafetyConfirmed
                       ? "#dcfce7"
-                      : "#fee2e2",
-                  borderWidth: 1,
-                  borderColor:
-                    centerDepthReading.status === "success"
-                      ? "#86efac"
-                      : "#fecaca",
-                }}
-              >
+                      : "#fff7ed",
+                    borderWidth: 2,
+                    borderColor: liveSafetyConfirmed ? "#22c55e" : "#f59e0b",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color: liveSafetyConfirmed ? "#166534" : "#92400e",
+                      textAlign: "center",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {liveSafetyConfirmed
+                      ? "Spotter Safety Confirmed"
+                      : "Tap to confirm: Spotter Mode only — visually check before backing"}
+                  </Text>
+                </TouchableOpacity>
+                <View
+                  style={{
+                    marginTop: 9,
+                    flexDirection: "row",
+                    gap: 8,
+                    justifyContent: "center",
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={startLiveRearDistance}
+                    disabled={liveRearDistanceActive || !liveSafetyConfirmed}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+
+                      backgroundColor:
+                        liveRearDistanceActive || !liveSafetyConfirmed
+                          ? "#94a3b8"
+                          : "#2563eb",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 11,
+                        fontWeight: "900",
+                        textAlign: "center",
+                      }}
+                    >
+                      Start Live Rear Distance
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={stopLiveRearDistance}
+                    disabled={!liveRearDistanceActive}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      paddingHorizontal: 10,
+                      borderRadius: 12,
+                      backgroundColor: liveRearDistanceActive
+                        ? "#dc2626"
+                        : "#94a3b8",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 11,
+                        fontWeight: "900",
+                        textAlign: "center",
+                      }}
+                    >
+                      Stop Live Rear Distance
+                    </Text>
+                  </TouchableOpacity>
+                </View>
                 <Text
                   style={{
+                    marginTop: 7,
                     fontSize: 11,
-                    fontWeight: "900",
-                    color:
-                      centerDepthReading.status === "success"
-                        ? "#166534"
-                        : "#991b1b",
+                    fontWeight: "800",
+                    color: liveRearDistanceActive ? "#166534" : "#475569",
                     textAlign: "center",
                     lineHeight: 16,
                   }}
                 >
-                  {centerDepthReading.message}
+                  {liveRearDistanceActive
+                    ? "Live rear distance is running. The app refreshes about twice per second."
+                    : "Live mode is off. Use refresh manually or start live rear distance."}
                 </Text>
+                <View
+                  style={{
+                    marginTop: 10,
+                    padding: 14,
+                    borderRadius: 16,
+                    backgroundColor: liveRearDistanceActive
+                      ? liveRearDistanceStyles.backgroundColor
+                      : "#f1f5f9",
+                    borderWidth: 2,
+                    borderColor: liveRearDistanceActive
+                      ? liveRearDistanceStyles.borderColor
+                      : "#cbd5e1",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color: liveRearDistanceActive
+                        ? liveRearDistanceStyles.textColor
+                        : "#475569",
+                      marginBottom: 4,
+                      letterSpacing: 0.5,
+                    }}
+                  >
+                    {liveRearDistanceActive
+                      ? "LIVE REAR DISTANCE"
+                      : "LIVE REAR DISTANCE READY"}
+                  </Text>
 
-                {centerDepthReading.status === "success" ? (
-                  <>
+                  <Text
+                    style={{
+                      fontSize: 34,
+                      fontWeight: "900",
+                      color: liveRearDistanceActive
+                        ? liveRearDistanceStyles.textColor
+                        : "#475569",
+                      marginBottom: 2,
+                    }}
+                  >
+                    {liveRearDistanceNumber === null
+                      ? "--"
+                      : `${Math.round(liveRearDistanceNumber)} in`}
+                  </Text>
+
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: "900",
+                      color: liveRearDistanceActive
+                        ? liveRearDistanceStyles.textColor
+                        : "#475569",
+                    }}
+                  >
+                    {liveRearDistanceActive
+                      ? liveRearDistanceLabel
+                      : "NOT RUNNING"}
+                  </Text>
+
+                  <Text
+                    style={{
+                      marginTop: 6,
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: liveRearDistanceActive
+                        ? liveRearDistanceStyles.textColor
+                        : "#475569",
+                      textAlign: "center",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {liveVoiceEnabled
+                      ? "Voice alerts are on. Move slowly and confirm visually before backing."
+                      : "Voice alerts are off. Watch the screen and confirm visually before backing."}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    marginTop: 8,
+                    padding: 10,
+                    borderRadius: 12,
+                    backgroundColor:
+                      rearDistanceTrend === "closer"
+                        ? "#fee2e2"
+                        : rearDistanceTrend === "farther"
+                          ? "#dcfce7"
+                          : "#f1f5f9",
+                    borderWidth: 1,
+                    borderColor:
+                      rearDistanceTrend === "closer"
+                        ? "#ef4444"
+                        : rearDistanceTrend === "farther"
+                          ? "#22c55e"
+                          : "#cbd5e1",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color:
+                        rearDistanceTrend === "closer"
+                          ? "#991b1b"
+                          : rearDistanceTrend === "farther"
+                            ? "#166534"
+                            : "#475569",
+                      textAlign: "center",
+                    }}
+                  >
+                    {rearDistanceTrend === "closer"
+                      ? "Trend: Getting CLOSER"
+                      : rearDistanceTrend === "farther"
+                        ? "Trend: Moving FARTHER away"
+                        : rearDistanceTrend === "steady"
+                          ? "Trend: Holding steady"
+                          : "Trend: Waiting for second reading"}
+                  </Text>
+                </View>
+                {centerDepthReading ? (
+                  <View
+                    style={{
+                      marginTop: 10,
+                      padding: 10,
+                      borderRadius: 10,
+                      backgroundColor:
+                        centerDepthReading.status === "success"
+                          ? "#dcfce7"
+                          : "#fee2e2",
+                      borderWidth: 1,
+                      borderColor:
+                        centerDepthReading.status === "success"
+                          ? "#86efac"
+                          : "#fecaca",
+                    }}
+                  >
                     <Text
                       style={{
-                        marginTop: 6,
-                        fontSize: 18,
-                        fontWeight: "900",
-                        color: "#166534",
-                        textAlign: "center",
-                      }}
-                    >
-                      {`${centerDepthReading.roundedInches} inches`}
-                    </Text>
-
-                    <Text
-                      style={{
-                        marginTop: 5,
                         fontSize: 11,
-                        fontWeight: "800",
-                        color: "#166534",
+                        fontWeight: "900",
+                        color:
+                          centerDepthReading.status === "success"
+                            ? "#166534"
+                            : "#991b1b",
                         textAlign: "center",
                         lineHeight: 16,
                       }}
                     >
-                      {`Rear clearance updated from Real LiDAR.\nMeters: ${centerDepthReading.depthMeters?.toFixed(
-                        2,
-                      )}\nInches: ${centerDepthReading.depthInches?.toFixed(
-                        1,
-                      )}`}
+                      {centerDepthReading.message}
                     </Text>
-                  </>
+
+                    {centerDepthReading.status === "success" ? (
+                      <>
+                        <Text
+                          style={{
+                            marginTop: 6,
+                            fontSize: 18,
+                            fontWeight: "900",
+                            color: "#166534",
+                            textAlign: "center",
+                          }}
+                        >
+                          {`${centerDepthReading.roundedInches} inches`}
+                        </Text>
+
+                        <Text
+                          style={{
+                            marginTop: 5,
+                            fontSize: 11,
+                            fontWeight: "800",
+                            color: "#166534",
+                            textAlign: "center",
+                            lineHeight: 16,
+                          }}
+                        >
+                          {`Rear clearance updated from Real LiDAR.\nMeters: ${centerDepthReading.depthMeters?.toFixed(
+                            2,
+                          )}\nInches: ${centerDepthReading.depthInches?.toFixed(1)}`}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
                 ) : null}
-              </View>
+                <Text
+                  style={{
+                    marginTop: 8,
+                    fontSize: 10,
+                    fontWeight: "800",
+                    color: "#64748b",
+                    textAlign: "center",
+                  }}
+                >
+                  {`Live refreshes: ${realLidarRefreshCount}. Last rear: ${
+                    lastAppliedRearInches ?? "--"
+                  } in.`}
+                </Text>
+              </>
             ) : null}
           </View>
         </View>
