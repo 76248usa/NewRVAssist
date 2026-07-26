@@ -381,6 +381,7 @@ function LidarSafetyStatusCard({
 }
 
 function LidarFieldTestChecklist() {
+  const [expanded, setExpanded] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
   const checklistItems = [
@@ -455,94 +456,155 @@ function LidarFieldTestChecklist() {
           completedCount === checklistItems.length ? "#22c55e" : "#cbd5e1",
       }}
     >
-      <Text
+      <TouchableOpacity
+        onPress={() => setExpanded((value) => !value)}
         style={{
-          fontSize: 13,
-          fontWeight: "900",
-          color: "#0f172a",
-          textAlign: "center",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
         }}
       >
-        LiDAR Field Test Checklist
-      </Text>
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "900",
+              color: "#0f172a",
+            }}
+          >
+            LiDAR Field Test Checklist
+          </Text>
 
-      <Text
-        style={{
-          marginTop: 5,
-          fontSize: 11,
-          fontWeight: "800",
-          color:
-            completedCount === checklistItems.length ? "#166534" : "#475569",
-          textAlign: "center",
-          lineHeight: 16,
-        }}
-      >
-        {completedCount} / {checklistItems.length} safety checks completed
-      </Text>
+          <Text
+            style={{
+              marginTop: 5,
+              fontSize: 11,
+              fontWeight: "800",
+              color:
+                completedCount === checklistItems.length
+                  ? "#166534"
+                  : "#475569",
+              lineHeight: 16,
+            }}
+          >
+            {completedCount} / {checklistItems.length} safety checks completed
+          </Text>
+        </View>
 
-      <View style={{ marginTop: 10, gap: 8 }}>
-        {checklistItems.map((item) => {
-          const checked = checkedItems[item.key] === true;
-
-          return (
-            <TouchableOpacity
-              key={item.key}
-              onPress={() => toggleItem(item.key)}
-              style={{
-                padding: 10,
-                borderRadius: 12,
-                backgroundColor: checked ? "#dcfce7" : "white",
-                borderWidth: 1,
-                borderColor: checked ? "#22c55e" : "#e2e8f0",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "900",
-                  color: checked ? "#166534" : "#0f172a",
-                  lineHeight: 16,
-                }}
-              >
-                {checked ? "✓ " : "○ "}
-                {item.title}
-              </Text>
-
-              <Text
-                style={{
-                  marginTop: 4,
-                  fontSize: 11,
-                  fontWeight: "700",
-                  color: checked ? "#166534" : "#475569",
-                  lineHeight: 15,
-                }}
-              >
-                {item.detail}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {completedCount === checklistItems.length ? (
-        <Text
+        <View
           style={{
-            marginTop: 10,
-            fontSize: 12,
-            fontWeight: "900",
-            color: "#166534",
-            textAlign: "center",
-            lineHeight: 16,
+            paddingVertical: 5,
+            paddingHorizontal: 9,
+            borderRadius: 999,
+            backgroundColor: expanded ? "#e0f2fe" : "#f1f5f9",
+            borderWidth: 1,
+            borderColor: expanded ? "#38bdf8" : "#cbd5e1",
           }}
         >
-          Field test checklist complete. Continue using visual confirmation and
-          a spotter.
-        </Text>
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "900",
+              color: expanded ? "#075985" : "#475569",
+            }}
+          >
+            {expanded ? "Hide" : "Show"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {expanded ? (
+        <>
+          <View style={{ marginTop: 10, gap: 8 }}>
+            {checklistItems.map((item) => {
+              const checked = checkedItems[item.key] === true;
+
+              return (
+                <TouchableOpacity
+                  key={item.key}
+                  onPress={() => toggleItem(item.key)}
+                  style={{
+                    padding: 10,
+                    borderRadius: 12,
+                    backgroundColor: checked ? "#dcfce7" : "white",
+                    borderWidth: 1,
+                    borderColor: checked ? "#22c55e" : "#e2e8f0",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color: checked ? "#166534" : "#0f172a",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {checked ? "✓ " : "○ "}
+                    {item.title}
+                  </Text>
+
+                  <Text
+                    style={{
+                      marginTop: 4,
+                      fontSize: 11,
+                      fontWeight: "700",
+                      color: checked ? "#166534" : "#475569",
+                      lineHeight: 15,
+                    }}
+                  >
+                    {item.detail}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <TouchableOpacity
+            onPress={() => setCheckedItems({})}
+            style={{
+              marginTop: 10,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              backgroundColor: "#f1f5f9",
+              borderWidth: 1,
+              borderColor: "#cbd5e1",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "900",
+                color: "#475569",
+                textAlign: "center",
+              }}
+            >
+              Reset Checklist
+            </Text>
+          </TouchableOpacity>
+
+          {completedCount === checklistItems.length ? (
+            <Text
+              style={{
+                marginTop: 10,
+                fontSize: 12,
+                fontWeight: "900",
+                color: "#166534",
+                textAlign: "center",
+                lineHeight: 16,
+              }}
+            >
+              Field test checklist complete. Continue using visual confirmation
+              and a spotter.
+            </Text>
+          ) : null}
+        </>
       ) : null}
     </View>
   );
 }
-
 export function LidarReadinessCard({
   manualModeActive = true,
   distanceSource,
