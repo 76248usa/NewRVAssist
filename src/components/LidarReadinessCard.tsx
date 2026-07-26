@@ -236,6 +236,7 @@ function LidarStatusRow({ label, value, status }: LidarStatusRowProps) {
     </View>
   );
 }
+
 export function LidarReadinessCard({
   manualModeActive = true,
   distanceSource,
@@ -401,6 +402,52 @@ export function LidarReadinessCard({
         )} inches. Stop backing and inspect before moving.`
       : "AUTO STOP is armed while live rear distance is running.";
 
+  const liveStatusStripLabel = autoStopTriggered
+    ? "AUTO STOPPED"
+    : liveRearDistanceActive
+      ? "LIVE ACTIVE"
+      : nativeLidarAvailability?.status === "supported"
+        ? "READY"
+        : "NOT READY";
+
+  const liveStatusStripRearText =
+    liveRearDistanceNumber === null
+      ? "Rear --"
+      : `Rear ${Math.round(liveRearDistanceNumber)} in`;
+
+  const liveStatusStripLevelText =
+    liveRearDistanceNumber === null ? "Waiting" : liveRearDistanceLabel;
+
+  const liveStatusStripTrendText = autoStopTriggered
+    ? "Check behind RV"
+    : rearDistanceTrend === "closer"
+      ? "Getting CLOSER"
+      : rearDistanceTrend === "farther"
+        ? "Moving FARTHER"
+        : rearDistanceTrend === "steady"
+          ? "Holding steady"
+          : "Waiting";
+
+  const liveStatusStripText = `${liveStatusStripLabel} • ${liveStatusStripRearText} • ${liveStatusStripLevelText} • ${liveStatusStripTrendText}`;
+
+  const liveStatusStripBackgroundColor = autoStopTriggered
+    ? "#fee2e2"
+    : liveRearDistanceActive
+      ? liveRearDistanceStyles.backgroundColor
+      : "#f1f5f9";
+
+  const liveStatusStripBorderColor = autoStopTriggered
+    ? "#dc2626"
+    : liveRearDistanceActive
+      ? liveRearDistanceStyles.borderColor
+      : "#cbd5e1";
+
+  const liveStatusStripTextColor = autoStopTriggered
+    ? "#991b1b"
+    : liveRearDistanceActive
+      ? liveRearDistanceStyles.textColor
+      : "#475569";
+
   const rearCollisionCoachMessage =
     rearCollisionCoachLevel === "stop"
       ? "STOP: Rear obstacle is too close. Do not continue backing."
@@ -413,12 +460,14 @@ export function LidarReadinessCard({
             : rearDistanceTrend === "steady"
               ? "Holding steady. Keep checking visually before moving."
               : "Waiting for enough readings to coach the next move.";
+
   const applyTestLidarReading = (
     label: string,
     reading: LidarClearanceReading,
   ) => {
     const bridgeResult = createTestLidarBridgeResult(reading);
 
+    stopLiveRearDistance();
     setBridgeStatus("test-mode");
     setBridgeMessage(`${label} test LiDAR reading applied.`);
     setCenterDepthReading(null);
@@ -557,6 +606,7 @@ export function LidarReadinessCard({
 
       setLastAppliedRearInches(rearInches);
       setRealLidarRefreshCount((count) => count + 1);
+
       onApplyRealLidarReading?.({
         left: realLidarClearanceValues.left,
         right: realLidarClearanceValues.right,
@@ -604,6 +654,7 @@ export function LidarReadinessCard({
 
     liveRearDistanceActiveRef.current = true;
     setLiveRearDistanceActive(true);
+
     liveRearDistanceTimerRef.current = setInterval(async () => {
       if (liveReadingInProgressRef.current) {
         return;
@@ -806,6 +857,28 @@ export function LidarReadinessCard({
 
       {expanded ? (
         <View style={{ marginTop: 12, gap: 10 }}>
+          <View
+            style={{
+              padding: 10,
+              borderRadius: 12,
+              backgroundColor: liveStatusStripBackgroundColor,
+              borderWidth: 2,
+              borderColor: liveStatusStripBorderColor,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "900",
+                color: liveStatusStripTextColor,
+                textAlign: "center",
+                lineHeight: 16,
+              }}
+            >
+              {liveStatusStripText}
+            </Text>
+          </View>
+
           <ChecklistRow
             status="done"
             title="Manual clearance safety"
@@ -813,49 +886,33 @@ export function LidarReadinessCard({
           />
 
           <ChecklistRow
-            status="done"
-            title="Test LiDAR safety"
-            detail="Test readings can simulate SAFE, CAUTION, and STOP distance conditions."
-          />
-
-          <ChecklistRow
             status="current"
-            title="Real LiDAR rear clearance"
-            detail="The iPhone can now read a real center depth and use it as rear clearance."
+            title="Test LiDAR safety"
+            detail="Use sample LiDAR readings to confirm the warning system before using live distance readings."
           />
 
           <ChecklistRow
-            status="future"
-            title="Live camera overlays"
-            detail="Future versions can show real-time visual guide lines and obstacle zones."
+            status={
+              nativeLidarAvailability?.status === "supported"
+                ? "done"
+                : "current"
+            }
+            title="Real LiDAR rear clearance"
+            detail="Use the iPhone LiDAR as a spotter-mode rear distance aid. Always confirm visually before backing."
           />
 
-          <View style={{ gap: 8 }}>
-            <LidarStatusRow
-              label="Manual mode"
-              value={manualModeActive ? "Available" : "Off"}
-              status="manual"
-            />
-
-            <LidarStatusRow
-              label="LiDAR Bridge"
-              value={bridgeStatusLabel}
-              status={bridgeStatus === "reading" ? "active" : "planned"}
-            />
-
-            <LidarStatusRow
-              label="Distance Source"
-              value={distanceSourceLabel}
-              status={distanceSource === "real-lidar" ? "active" : "manual"}
-            />
-          </View>
+          <ChecklistRow
+            status={liveRearDistanceActive ? "current" : "future"}
+            title="Live rear distance and voice alerts"
+            detail="Live rear distance refreshes repeatedly and gives voice warnings while it is active."
+          />
 
           <View
             style={{
               padding: 10,
               borderRadius: 12,
               backgroundColor: levelStyles.backgroundColor,
-              borderWidth: 1,
+              borderWidth: 2,
               borderColor: levelStyles.borderColor,
             }}
           >
@@ -867,12 +924,12 @@ export function LidarReadinessCard({
                 textAlign: "center",
               }}
             >
-              {`Current Distance Status: ${currentWorstLevel.toUpperCase()}`}
+              {`Current clearance status: ${currentWorstLevel.toUpperCase()}`}
             </Text>
 
             <Text
               style={{
-                marginTop: 5,
+                marginTop: 6,
                 fontSize: 11,
                 fontWeight: "800",
                 color: levelStyles.textColor,
@@ -882,179 +939,184 @@ export function LidarReadinessCard({
             >
               {warningReason}
             </Text>
+          </View>
 
+          <LidarStatusRow
+            label="Bridge status"
+            value={bridgeStatusLabel}
+            status={bridgeStatus === "not-connected" ? "planned" : "active"}
+          />
+
+          <View
+            style={{
+              padding: 10,
+              borderRadius: 12,
+              backgroundColor: "white",
+              borderWidth: 1,
+              borderColor: "#e2e8f0",
+            }}
+          >
             <Text
               style={{
-                marginTop: 5,
                 fontSize: 11,
                 fontWeight: "800",
-                color: levelStyles.textColor,
-                textAlign: "center",
+                color: "#475569",
                 lineHeight: 16,
               }}
             >
               {bridgeMessage}
             </Text>
-
-            {currentWorstLevel === "stop" ? (
-              <Text
-                style={{
-                  marginTop: 5,
-                  fontSize: 11,
-                  fontWeight: "900",
-                  color: stopRecoveryConfirmed ? "#166534" : "#991b1b",
-                  textAlign: "center",
-                  lineHeight: 16,
-                }}
-              >
-                {`Recovery Status: ${
-                  stopRecoveryConfirmed ? "Check Confirmed" : "Not Checked Yet"
-                }`}
-              </Text>
-            ) : null}
           </View>
 
           <View
             style={{
               padding: 10,
               borderRadius: 12,
-              backgroundColor: "#eef2ff",
+              backgroundColor: "#f1f5f9",
               borderWidth: 1,
-              borderColor: "#c7d2fe",
+              borderColor: "#cbd5e1",
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "900",
-                color: "#3730a3",
-                textAlign: "center",
+                color: "#0f172a",
               }}
             >
               Test LiDAR Readings
             </Text>
 
-            <View
+            <Text
               style={{
-                marginTop: 9,
-                flexDirection: "row",
-                flexWrap: "wrap",
-                gap: 8,
-                justifyContent: "center",
+                marginTop: 5,
+                fontSize: 11,
+                fontWeight: "700",
+                color: "#475569",
+                lineHeight: 16,
               }}
             >
+              Use these test readings to confirm SAFE, CAUTION, and STOP
+              behavior before using real LiDAR.
+            </Text>
+
+            <View style={{ marginTop: 10, gap: 8 }}>
               <TouchableOpacity
                 onPress={() =>
-                  applyTestLidarReading("SAFE", {
-                    left: null,
-                    right: null,
-                    rear: 48,
-                    roof: null,
+                  applyTestLidarReading("Safe", {
+                    left: 72,
+                    right: 72,
+                    rear: 72,
+                    roof: 120,
                     source: "test-lidar",
                     timestamp: Date.now(),
                   })
                 }
                 style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 999,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
                   backgroundColor: "#dcfce7",
                   borderWidth: 1,
                   borderColor: "#22c55e",
+                  alignItems: "center",
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: "900",
                     color: "#166534",
                   }}
                 >
-                  Test SAFE
+                  Apply SAFE test reading
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() =>
-                  applyTestLidarReading("CAUTION", {
-                    left: null,
-                    right: null,
-                    rear: 28,
-                    roof: null,
+                  applyTestLidarReading("Caution", {
+                    left: 48,
+                    right: 48,
+                    rear: 30,
+                    roof: 120,
                     source: "test-lidar",
                     timestamp: Date.now(),
                   })
                 }
                 style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 999,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
                   backgroundColor: "#fef3c7",
                   borderWidth: 1,
                   borderColor: "#f59e0b",
+                  alignItems: "center",
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: "900",
                     color: "#92400e",
                   }}
                 >
-                  Test CAUTION
+                  Apply CAUTION test reading
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={() =>
-                  applyTestLidarReading("STOP", {
-                    left: null,
-                    right: null,
+                  applyTestLidarReading("Stop", {
+                    left: 48,
+                    right: 48,
                     rear: 14,
-                    roof: null,
+                    roof: 120,
                     source: "test-lidar",
                     timestamp: Date.now(),
                   })
                 }
                 style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 999,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
                   backgroundColor: "#fee2e2",
                   borderWidth: 1,
                   borderColor: "#ef4444",
+                  alignItems: "center",
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: "900",
                     color: "#991b1b",
                   }}
                 >
-                  Test STOP
+                  Apply STOP test reading
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={clearTestLidarReading}
                 style={{
-                  paddingVertical: 8,
-                  paddingHorizontal: 10,
-                  borderRadius: 999,
-                  backgroundColor: "#f8fafc",
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: "white",
                   borderWidth: 1,
                   borderColor: "#cbd5e1",
+                  alignItems: "center",
                 }}
               >
                 <Text
                   style={{
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: "900",
-                    color: "#334155",
+                    color: "#475569",
                   }}
                 >
-                  Clear
+                  Clear LiDAR reading
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1064,17 +1126,16 @@ export function LidarReadinessCard({
             style={{
               padding: 10,
               borderRadius: 12,
-              backgroundColor: "#f8fafc",
+              backgroundColor: "#eff6ff",
               borderWidth: 1,
-              borderColor: "#cbd5e1",
+              borderColor: "#bfdbfe",
             }}
           >
             <Text
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: "900",
-                color: "#334155",
-                textAlign: "center",
+                color: "#1e3a8a",
               }}
             >
               Real LiDAR Assist
@@ -1082,291 +1143,186 @@ export function LidarReadinessCard({
 
             <Text
               style={{
-                marginTop: 6,
+                marginTop: 5,
                 fontSize: 11,
                 fontWeight: "800",
-                color: "#475569",
-                textAlign: "center",
+                color: "#1e40af",
                 lineHeight: 16,
               }}
             >
-              {
-                "Check whether this device can use real iPhone LiDAR depth readings."
-              }
+              Spotter Mode only. Keep the iPhone aimed at the rear obstacle and
+              visually confirm before backing.
             </Text>
-
-            <View
-              style={{
-                marginTop: 10,
-                padding: 10,
-                borderRadius: 12,
-                backgroundColor: "#fef3c7",
-                borderWidth: 1,
-                borderColor: "#f59e0b",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: "900",
-                  color: "#92400e",
-                  marginBottom: 4,
-                  textAlign: "center",
-                }}
-              >
-                LiDAR Spotter Mode
-              </Text>
-
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "700",
-                  color: "#92400e",
-                  lineHeight: 16,
-                  textAlign: "center",
-                }}
-              >
-                {
-                  "Use this as a spotter or campsite pre-scan aid. Move slowly. Phone aim and LiDAR delay can affect readings. Always confirm visually before backing."
-                }
-              </Text>
-            </View>
 
             <TouchableOpacity
               onPress={handleCheckRealLidarReadiness}
               disabled={checkingRealLidar}
               style={{
                 marginTop: 10,
-                paddingVertical: 10,
+                paddingVertical: 11,
                 paddingHorizontal: 12,
                 borderRadius: 12,
-                backgroundColor: checkingRealLidar ? "#94a3b8" : "#0f172a",
+                backgroundColor: checkingRealLidar ? "#e2e8f0" : "#dbeafe",
+                borderWidth: 1,
+                borderColor: "#60a5fa",
                 alignItems: "center",
               }}
             >
               <Text
                 style={{
-                  color: "white",
                   fontSize: 12,
                   fontWeight: "900",
+                  color: "#1e40af",
+                  textAlign: "center",
                 }}
               >
                 {checkingRealLidar
-                  ? "Checking..."
+                  ? "Checking Real LiDAR..."
                   : "Check Real LiDAR Readiness"}
               </Text>
             </TouchableOpacity>
 
-            {realLidarPreflight?.status === "needs-camera-permission" ? (
-              <TouchableOpacity
-                onPress={handleRequestRealLidarCameraPermission}
-                disabled={checkingRealLidar}
-                style={{
-                  marginTop: 8,
-                  paddingVertical: 10,
-                  paddingHorizontal: 12,
-                  borderRadius: 12,
-                  backgroundColor: "#2563eb",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    fontSize: 12,
-                    fontWeight: "900",
-                  }}
-                >
-                  Allow Camera for LiDAR Assist
-                </Text>
-              </TouchableOpacity>
-            ) : null}
-
             {realLidarPreflight ? (
               <View
                 style={{
-                  marginTop: 10,
+                  marginTop: 8,
                   padding: 10,
-                  borderRadius: 10,
-                  backgroundColor:
-                    realLidarPreflight.status === "ready-for-native-check"
-                      ? "#dcfce7"
-                      : realLidarPreflight.status === "camera-denied"
-                        ? "#fee2e2"
-                        : "#fff7ed",
+                  borderRadius: 12,
+                  backgroundColor: "white",
                   borderWidth: 1,
-                  borderColor:
-                    realLidarPreflight.status === "ready-for-native-check"
-                      ? "#86efac"
-                      : realLidarPreflight.status === "camera-denied"
-                        ? "#fecaca"
-                        : "#fed7aa",
+                  borderColor: realLidarPreflight.canContinueToNativeLidarCheck
+                    ? "#22c55e"
+                    : "#f59e0b",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: "900",
-                    color:
-                      realLidarPreflight.status === "ready-for-native-check"
-                        ? "#166534"
-                        : realLidarPreflight.status === "camera-denied"
-                          ? "#991b1b"
-                          : "#9a3412",
-                    textAlign: "center",
+                    fontWeight: "800",
+                    color: "#334155",
                     lineHeight: 16,
                   }}
                 >
                   {realLidarPreflight.message}
                 </Text>
 
-                <Text
-                  style={{
-                    marginTop: 6,
-                    fontSize: 11,
-                    fontWeight: "800",
-                    color: "#475569",
-                    textAlign: "center",
-                    lineHeight: 16,
-                  }}
-                >
-                  {`Device: ${
-                    realLidarPreflight.deviceName ?? "Unknown"
-                  }\nCamera permission: ${realLidarPreflight.cameraPermission}`}
-                </Text>
+                {!realLidarPreflight.canContinueToNativeLidarCheck ? (
+                  <TouchableOpacity
+                    onPress={handleRequestRealLidarCameraPermission}
+                    disabled={checkingRealLidar}
+                    style={{
+                      marginTop: 8,
+                      paddingVertical: 10,
+                      paddingHorizontal: 12,
+                      borderRadius: 12,
+                      backgroundColor: "#fef3c7",
+                      borderWidth: 1,
+                      borderColor: "#f59e0b",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "900",
+                        color: "#92400e",
+                        textAlign: "center",
+                      }}
+                    >
+                      Request Camera Permission
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
             ) : null}
 
             {nativeLidarAvailability ? (
               <View
                 style={{
-                  marginTop: 10,
+                  marginTop: 8,
                   padding: 10,
-                  borderRadius: 10,
-                  backgroundColor:
-                    nativeLidarAvailability.status === "supported"
-                      ? "#dcfce7"
-                      : nativeLidarAvailability.status ===
-                          "native-module-missing"
-                        ? "#fff7ed"
-                        : "#fee2e2",
+                  borderRadius: 12,
+                  backgroundColor: "white",
                   borderWidth: 1,
                   borderColor:
                     nativeLidarAvailability.status === "supported"
-                      ? "#86efac"
-                      : nativeLidarAvailability.status ===
-                          "native-module-missing"
-                        ? "#fed7aa"
-                        : "#fecaca",
+                      ? "#22c55e"
+                      : "#ef4444",
                 }}
               >
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: "900",
+                    fontWeight: "800",
                     color:
                       nativeLidarAvailability.status === "supported"
                         ? "#166534"
-                        : nativeLidarAvailability.status ===
-                            "native-module-missing"
-                          ? "#9a3412"
-                          : "#991b1b",
-                    textAlign: "center",
+                        : "#991b1b",
                     lineHeight: 16,
                   }}
                 >
                   {nativeLidarAvailability.message}
                 </Text>
-
-                <Text
-                  style={{
-                    marginTop: 6,
-                    fontSize: 11,
-                    fontWeight: "800",
-                    color: "#475569",
-                    textAlign: "center",
-                    lineHeight: 16,
-                  }}
-                >
-                  {`AR world tracking: ${
-                    nativeLidarAvailability.worldTrackingSupported
-                      ? "Yes"
-                      : "No"
-                  }\nScene depth: ${
-                    nativeLidarAvailability.sceneDepthSupported ? "Yes" : "No"
-                  }\nSmoothed scene depth: ${
-                    nativeLidarAvailability.smoothedSceneDepthSupported
-                      ? "Yes"
-                      : "No"
-                  }\nScene reconstruction: ${
-                    nativeLidarAvailability.sceneReconstructionSupported
-                      ? "Yes"
-                      : "No"
-                  }`}
-                </Text>
               </View>
             ) : null}
 
             {nativeLidarAvailability?.status === "supported" ? (
-              <>
+              <View style={{ marginTop: 10, gap: 8 }}>
                 <TouchableOpacity
                   onPress={readRealLidarRearDistance}
                   disabled={checkingCenterDepth || liveRearDistanceActive}
                   style={{
-                    marginTop: 10,
-                    paddingVertical: 10,
+                    paddingVertical: 12,
                     paddingHorizontal: 12,
                     borderRadius: 12,
                     backgroundColor:
                       checkingCenterDepth || liveRearDistanceActive
-                        ? "#94a3b8"
-                        : "#16a34a",
+                        ? "#e2e8f0"
+                        : "#dcfce7",
+                    borderWidth: 1,
+                    borderColor: "#22c55e",
                     alignItems: "center",
                   }}
                 >
                   <Text
                     style={{
-                      color: "white",
                       fontSize: 12,
                       fontWeight: "900",
+                      color: "#166534",
                       textAlign: "center",
                     }}
                   >
-                    {liveRearDistanceActive
-                      ? "Live Rear Distance Running"
-                      : checkingCenterDepth
-                        ? "Reading Depth..."
-                        : hasRealLidarRearReading
-                          ? "Refresh Real LiDAR Rear Distance"
-                          : "Use Real LiDAR as Rear Distance"}
+                    {checkingCenterDepth
+                      ? "Reading rear distance..."
+                      : hasRealLidarRearReading
+                        ? "Refresh Real LiDAR Rear Distance"
+                        : "Use Real LiDAR Rear Distance"}
                   </Text>
                 </TouchableOpacity>
+
                 <Text
                   style={{
-                    marginTop: 7,
                     fontSize: 11,
-                    fontWeight: "800",
+                    fontWeight: "700",
                     color: "#475569",
-                    textAlign: "center",
                     lineHeight: 16,
+                    textAlign: "center",
                   }}
                 >
-                  {
-                    "Point the camera at the rear obstacle and tap refresh as you move slowly."
-                  }
+                  Point the iPhone toward the obstacle behind the RV. Keep the
+                  phone steady while reading.
                 </Text>
 
                 <TouchableOpacity
                   onPress={() => setLiveSafetyConfirmed((value) => !value)}
                   style={{
-                    marginTop: 10,
-                    paddingVertical: 12,
+                    paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 12,
                     backgroundColor: liveSafetyConfirmed
                       ? "#dcfce7"
-                      : "#fff7ed",
-                    borderWidth: 2,
+                      : "#fef3c7",
+                    borderWidth: 1,
                     borderColor: liveSafetyConfirmed ? "#22c55e" : "#f59e0b",
                     alignItems: "center",
                   }}
@@ -1381,16 +1337,15 @@ export function LidarReadinessCard({
                     }}
                   >
                     {liveSafetyConfirmed
-                      ? "Spotter Safety Confirmed"
-                      : "Tap to confirm: Spotter Mode only — visually check before backing"}
+                      ? "Spotter safety confirmed"
+                      : "I understand: LiDAR is a spotter aid only"}
                   </Text>
                 </TouchableOpacity>
+
                 <View
                   style={{
-                    marginTop: 9,
                     flexDirection: "row",
                     gap: 8,
-                    justifyContent: "center",
                   }}
                 >
                   <TouchableOpacity
@@ -1398,22 +1353,26 @@ export function LidarReadinessCard({
                     disabled={liveRearDistanceActive || !liveSafetyConfirmed}
                     style={{
                       flex: 1,
-                      paddingVertical: 10,
+                      paddingVertical: 12,
                       paddingHorizontal: 10,
                       borderRadius: 12,
-
                       backgroundColor:
                         liveRearDistanceActive || !liveSafetyConfirmed
-                          ? "#94a3b8"
-                          : "#2563eb",
+                          ? "#e2e8f0"
+                          : "#dcfce7",
+                      borderWidth: 1,
+                      borderColor: "#22c55e",
                       alignItems: "center",
                     }}
                   >
                     <Text
                       style={{
-                        color: "white",
                         fontSize: 11,
                         fontWeight: "900",
+                        color:
+                          liveRearDistanceActive || !liveSafetyConfirmed
+                            ? "#64748b"
+                            : "#166534",
                         textAlign: "center",
                       }}
                     >
@@ -1426,20 +1385,24 @@ export function LidarReadinessCard({
                     disabled={!liveRearDistanceActive}
                     style={{
                       flex: 1,
-                      paddingVertical: 10,
+                      paddingVertical: 12,
                       paddingHorizontal: 10,
                       borderRadius: 12,
                       backgroundColor: liveRearDistanceActive
-                        ? "#dc2626"
-                        : "#94a3b8",
+                        ? "#fee2e2"
+                        : "#e2e8f0",
+                      borderWidth: 1,
+                      borderColor: liveRearDistanceActive
+                        ? "#ef4444"
+                        : "#cbd5e1",
                       alignItems: "center",
                     }}
                   >
                     <Text
                       style={{
-                        color: "white",
                         fontSize: 11,
                         fontWeight: "900",
+                        color: liveRearDistanceActive ? "#991b1b" : "#64748b",
                         textAlign: "center",
                       }}
                     >
@@ -1447,9 +1410,9 @@ export function LidarReadinessCard({
                     </Text>
                   </TouchableOpacity>
                 </View>
+
                 <Text
                   style={{
-                    marginTop: 7,
                     fontSize: 11,
                     fontWeight: "800",
                     color: liveRearDistanceActive ? "#166534" : "#475569",
@@ -1458,21 +1421,17 @@ export function LidarReadinessCard({
                   }}
                 >
                   {liveRearDistanceActive
-                    ? "Live rear distance is running. The app refreshes about twice per second."
-                    : "Live mode is off. Use refresh manually or start live rear distance."}
+                    ? "Voice alerts are active while live rear distance is running. Move slowly and confirm visually before backing."
+                    : "Voice alerts will start when live rear distance is running."}
                 </Text>
+
                 <View
                   style={{
-                    marginTop: 10,
-                    padding: 14,
-                    borderRadius: 16,
-                    backgroundColor: liveRearDistanceActive
-                      ? liveRearDistanceStyles.backgroundColor
-                      : "#f1f5f9",
-                    borderWidth: 2,
-                    borderColor: liveRearDistanceActive
-                      ? liveRearDistanceStyles.borderColor
-                      : "#cbd5e1",
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: liveRearDistanceStyles.backgroundColor,
+                    borderWidth: 3,
+                    borderColor: liveRearDistanceStyles.borderColor,
                     alignItems: "center",
                   }}
                 >
@@ -1480,68 +1439,42 @@ export function LidarReadinessCard({
                     style={{
                       fontSize: 12,
                       fontWeight: "900",
-                      color: liveRearDistanceActive
-                        ? liveRearDistanceStyles.textColor
-                        : "#475569",
-                      marginBottom: 4,
-                      letterSpacing: 0.5,
+                      color: liveRearDistanceStyles.textColor,
+                      textAlign: "center",
                     }}
                   >
-                    {liveRearDistanceActive
-                      ? "LIVE REAR DISTANCE"
-                      : "LIVE REAR DISTANCE READY"}
+                    LIVE REAR DISTANCE
                   </Text>
 
                   <Text
                     style={{
-                      fontSize: 34,
+                      marginTop: 4,
+                      fontSize: 24,
                       fontWeight: "900",
-                      color: liveRearDistanceActive
-                        ? liveRearDistanceStyles.textColor
-                        : "#475569",
-                      marginBottom: 2,
+                      color: liveRearDistanceStyles.textColor,
+                      textAlign: "center",
                     }}
                   >
                     {liveRearDistanceNumber === null
-                      ? "--"
+                      ? "-- in"
                       : `${Math.round(liveRearDistanceNumber)} in`}
                   </Text>
 
                   <Text
                     style={{
-                      fontSize: 18,
+                      marginTop: 2,
+                      fontSize: 13,
                       fontWeight: "900",
-                      color: liveRearDistanceActive
-                        ? liveRearDistanceStyles.textColor
-                        : "#475569",
-                    }}
-                  >
-                    {liveRearDistanceActive
-                      ? liveRearDistanceLabel
-                      : "NOT RUNNING"}
-                  </Text>
-
-                  <Text
-                    style={{
-                      marginTop: 6,
-                      fontSize: 11,
-                      fontWeight: "700",
-                      color: liveRearDistanceActive
-                        ? liveRearDistanceStyles.textColor
-                        : "#475569",
+                      color: liveRearDistanceStyles.textColor,
                       textAlign: "center",
-                      lineHeight: 16,
                     }}
                   >
-                    {liveVoiceEnabled
-                      ? "Voice alerts are on. Move slowly and confirm visually before backing."
-                      : "Voice alerts are off. Watch the screen and confirm visually before backing."}
+                    {liveRearDistanceLabel}
                   </Text>
                 </View>
 
                 <View
                   style={{
-                    marginTop: 8,
                     padding: 10,
                     borderRadius: 12,
                     backgroundColor:
@@ -1582,9 +1515,9 @@ export function LidarReadinessCard({
                           : "Trend: Waiting for second reading"}
                   </Text>
                 </View>
+
                 <View
                   style={{
-                    marginTop: 8,
                     padding: 10,
                     borderRadius: 12,
                     backgroundColor:
@@ -1625,43 +1558,39 @@ export function LidarReadinessCard({
                     {rearCollisionCoachMessage}
                   </Text>
                 </View>
+
                 <View
                   style={{
-                    marginTop: 8,
                     padding: 12,
                     borderRadius: 12,
-                    backgroundColor: autoStopActive ? "#fee2e2" : "#f8fafc",
+                    backgroundColor:
+                      autoStopActive || autoStopTriggered
+                        ? "#fee2e2"
+                        : "#f8fafc",
                     borderWidth: 3,
-                    borderColor: autoStopActive ? "#dc2626" : "#cbd5e1",
+                    borderColor:
+                      autoStopActive || autoStopTriggered
+                        ? "#dc2626"
+                        : "#cbd5e1",
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 13,
                       fontWeight: "900",
-                      color: autoStopActive ? "#991b1b" : "#475569",
+                      color:
+                        autoStopActive || autoStopTriggered
+                          ? "#991b1b"
+                          : "#475569",
                       textAlign: "center",
                       lineHeight: 17,
                     }}
                   >
-                    {autoStopMessage}
+                    {autoStopTriggered
+                      ? "AUTO STOP triggered. Live rear distance has been stopped. Get out and check behind the RV."
+                      : autoStopMessage}
                   </Text>
-                  {autoStopActive ? (
-                    <Text
-                      style={{
-                        marginTop: 6,
-                        fontSize: 11,
-                        fontWeight: "800",
-                        color: "#991b1b",
-                        textAlign: "center",
-                        lineHeight: 16,
-                      }}
-                    >
-                      {
-                        "Do not continue backing. Get out and confirm the rear clearance visually."
-                      }
-                    </Text>
-                  ) : null}
+
                   <Text
                     style={{
                       marginTop: 6,
@@ -1673,9 +1602,26 @@ export function LidarReadinessCard({
                     }}
                   >
                     {autoStopTriggered
-                      ? "AUTO STOP triggered. Live rear distance has been stopped."
+                      ? "Recovery check is required before continuing."
                       : `Repeated STOP counter: ${autoStopCount} / 3`}
                   </Text>
+
+                  {autoStopActive ? (
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        fontSize: 11,
+                        fontWeight: "800",
+                        color: "#991b1b",
+                        textAlign: "center",
+                        lineHeight: 16,
+                      }}
+                    >
+                      Do not continue backing. Get out and confirm the rear
+                      clearance visually.
+                    </Text>
+                  ) : null}
+
                   {autoStopTriggered ? (
                     <TouchableOpacity
                       onPress={() => {
@@ -1717,86 +1663,63 @@ export function LidarReadinessCard({
                     </TouchableOpacity>
                   ) : null}
                 </View>
+
                 {centerDepthReading ? (
                   <View
                     style={{
-                      marginTop: 10,
                       padding: 10,
-                      borderRadius: 10,
-                      backgroundColor:
-                        centerDepthReading.status === "success"
-                          ? "#dcfce7"
-                          : "#fee2e2",
+                      borderRadius: 12,
+                      backgroundColor: "white",
                       borderWidth: 1,
                       borderColor:
                         centerDepthReading.status === "success"
-                          ? "#86efac"
-                          : "#fecaca",
+                          ? "#22c55e"
+                          : "#ef4444",
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 11,
-                        fontWeight: "900",
+                        fontWeight: "800",
                         color:
                           centerDepthReading.status === "success"
                             ? "#166534"
                             : "#991b1b",
-                        textAlign: "center",
                         lineHeight: 16,
+                        textAlign: "center",
                       }}
                     >
                       {centerDepthReading.message}
                     </Text>
-
-                    {centerDepthReading.status === "success" ? (
-                      <>
-                        <Text
-                          style={{
-                            marginTop: 6,
-                            fontSize: 18,
-                            fontWeight: "900",
-                            color: "#166534",
-                            textAlign: "center",
-                          }}
-                        >
-                          {`${centerDepthReading.roundedInches} inches`}
-                        </Text>
-
-                        <Text
-                          style={{
-                            marginTop: 5,
-                            fontSize: 11,
-                            fontWeight: "800",
-                            color: "#166534",
-                            textAlign: "center",
-                            lineHeight: 16,
-                          }}
-                        >
-                          {`Rear clearance updated from Real LiDAR.\nMeters: ${centerDepthReading.depthMeters?.toFixed(
-                            2,
-                          )}\nInches: ${centerDepthReading.depthInches?.toFixed(1)}`}
-                        </Text>
-                      </>
-                    ) : null}
                   </View>
                 ) : null}
+
                 <Text
                   style={{
-                    marginTop: 8,
                     fontSize: 10,
-                    fontWeight: "800",
+                    fontWeight: "700",
                     color: "#64748b",
                     textAlign: "center",
+                    lineHeight: 14,
                   }}
                 >
-                  {`Live refreshes: ${realLidarRefreshCount}. Last rear: ${
-                    lastAppliedRearInches ?? "--"
-                  } in.`}
+                  {`Live refreshes: ${realLidarRefreshCount}${lastAppliedRearInches ? ` • Last rear: ${lastAppliedRearInches} in` : ""}`}
                 </Text>
-              </>
+              </View>
             ) : null}
           </View>
+
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "700",
+              color: manualModeActive ? "#475569" : "#94a3b8",
+              textAlign: "center",
+              lineHeight: 14,
+            }}
+          >
+            Manual clearance entry remains available as the backup safety mode.
+          </Text>
         </View>
       ) : null}
     </View>
