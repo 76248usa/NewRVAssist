@@ -237,6 +237,312 @@ function LidarStatusRow({ label, value, status }: LidarStatusRowProps) {
   );
 }
 
+type LidarSafetyStatusCardProps = {
+  manualModeActive: boolean;
+  nativeLidarAvailability: NativeLidarAvailabilityResult | null;
+  liveRearDistanceActive: boolean;
+  autoStopTriggered: boolean;
+  liveRearDistanceNumber: number | null;
+  liveRearDistanceLabel: string;
+};
+
+function LidarSafetyStatusCard({
+  manualModeActive,
+  nativeLidarAvailability,
+  liveRearDistanceActive,
+  autoStopTriggered,
+  liveRearDistanceNumber,
+  liveRearDistanceLabel,
+}: LidarSafetyStatusCardProps) {
+  const realLidarReady = nativeLidarAvailability?.status === "supported";
+
+  const rearText =
+    liveRearDistanceNumber === null
+      ? "No rear reading yet"
+      : `Rear ${Math.round(liveRearDistanceNumber)} in • ${liveRearDistanceLabel}`;
+
+  return (
+    <View
+      style={{
+        padding: 12,
+        borderRadius: 14,
+        backgroundColor: autoStopTriggered
+          ? "#fee2e2"
+          : liveRearDistanceActive
+            ? "#dcfce7"
+            : "#f8fafc",
+        borderWidth: 2,
+        borderColor: autoStopTriggered
+          ? "#dc2626"
+          : liveRearDistanceActive
+            ? "#22c55e"
+            : "#cbd5e1",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: "900",
+          color: autoStopTriggered ? "#991b1b" : "#0f172a",
+          textAlign: "center",
+        }}
+      >
+        LiDAR Safety Status
+      </Text>
+
+      <Text
+        style={{
+          marginTop: 6,
+          fontSize: 11,
+          fontWeight: "800",
+          color: autoStopTriggered ? "#991b1b" : "#475569",
+          textAlign: "center",
+          lineHeight: 16,
+        }}
+      >
+        {autoStopTriggered
+          ? "AUTO STOP triggered. Get out and inspect before moving."
+          : liveRearDistanceActive
+            ? "Live rear distance is running. Move in inches, not feet."
+            : "Confirm setup before starting live rear distance."}
+      </Text>
+
+      <View style={{ marginTop: 10, gap: 6 }}>
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: "#0f172a",
+            lineHeight: 16,
+          }}
+        >
+          Manual backup: {manualModeActive ? "Available" : "Not active"}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: realLidarReady ? "#166534" : "#92400e",
+            lineHeight: 16,
+          }}
+        >
+          Real rear LiDAR: {realLidarReady ? "Ready" : "Check readiness first"}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: liveRearDistanceActive ? "#166534" : "#475569",
+            lineHeight: 16,
+          }}
+        >
+          Live rear distance: {liveRearDistanceActive ? "Active" : "Stopped"}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: liveRearDistanceActive ? "#166534" : "#475569",
+            lineHeight: 16,
+          }}
+        >
+          Voice alerts:{" "}
+          {liveRearDistanceActive ? "Active" : "Start with live mode"}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: autoStopTriggered ? "#991b1b" : "#475569",
+            lineHeight: 16,
+          }}
+        >
+          Auto Stop:{" "}
+          {autoStopTriggered ? "Triggered" : "Armed during live mode"}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "900",
+            color: autoStopTriggered ? "#991b1b" : "#0f172a",
+            lineHeight: 16,
+          }}
+        >
+          Current rear status: {rearText}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function LidarFieldTestChecklist() {
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  const checklistItems = [
+    {
+      key: "parked",
+      title: "Vehicle parked and secure",
+      detail:
+        "Test only while parked or moving very slowly in a controlled open area.",
+    },
+    {
+      key: "spotter",
+      title: "Spotter available",
+      detail: "Have a second person outside watching the rear of the RV.",
+    },
+    {
+      key: "camera",
+      title: "iPhone aimed behind the RV",
+      detail:
+        "Point the rear camera toward the obstacle or open space behind the RV.",
+    },
+    {
+      key: "reading",
+      title: "Rear distance reading changes",
+      detail: "Move closer and farther and confirm the rear inches change.",
+    },
+    {
+      key: "caution",
+      title: "CAUTION voice tested",
+      detail:
+        "Confirm the app gives a clear caution warning before STOP distance.",
+    },
+    {
+      key: "stop",
+      title: "STOP voice tested",
+      detail:
+        "Confirm the app clearly says STOP when rear clearance is too close.",
+    },
+    {
+      key: "autostop",
+      title: "AUTO STOP tested",
+      detail:
+        "Confirm repeated STOP readings stop Live Rear Distance automatically.",
+    },
+    {
+      key: "recovery",
+      title: "Recovery reset tested",
+      detail:
+        "Tap got-out-and-checked reset and confirm Live Rear Distance can restart.",
+    },
+  ];
+
+  const completedCount = checklistItems.filter(
+    (item) => checkedItems[item.key],
+  ).length;
+
+  const toggleItem = (key: string) => {
+    setCheckedItems((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
+
+  return (
+    <View
+      style={{
+        marginTop: 8,
+        padding: 12,
+        borderRadius: 14,
+        backgroundColor: "#f8fafc",
+        borderWidth: 2,
+        borderColor:
+          completedCount === checklistItems.length ? "#22c55e" : "#cbd5e1",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 13,
+          fontWeight: "900",
+          color: "#0f172a",
+          textAlign: "center",
+        }}
+      >
+        LiDAR Field Test Checklist
+      </Text>
+
+      <Text
+        style={{
+          marginTop: 5,
+          fontSize: 11,
+          fontWeight: "800",
+          color:
+            completedCount === checklistItems.length ? "#166534" : "#475569",
+          textAlign: "center",
+          lineHeight: 16,
+        }}
+      >
+        {completedCount} / {checklistItems.length} safety checks completed
+      </Text>
+
+      <View style={{ marginTop: 10, gap: 8 }}>
+        {checklistItems.map((item) => {
+          const checked = checkedItems[item.key] === true;
+
+          return (
+            <TouchableOpacity
+              key={item.key}
+              onPress={() => toggleItem(item.key)}
+              style={{
+                padding: 10,
+                borderRadius: 12,
+                backgroundColor: checked ? "#dcfce7" : "white",
+                borderWidth: 1,
+                borderColor: checked ? "#22c55e" : "#e2e8f0",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "900",
+                  color: checked ? "#166534" : "#0f172a",
+                  lineHeight: 16,
+                }}
+              >
+                {checked ? "✓ " : "○ "}
+                {item.title}
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 4,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: checked ? "#166534" : "#475569",
+                  lineHeight: 15,
+                }}
+              >
+                {item.detail}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {completedCount === checklistItems.length ? (
+        <Text
+          style={{
+            marginTop: 10,
+            fontSize: 12,
+            fontWeight: "900",
+            color: "#166534",
+            textAlign: "center",
+            lineHeight: 16,
+          }}
+        >
+          Field test checklist complete. Continue using visual confirmation and
+          a spotter.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
 export function LidarReadinessCard({
   manualModeActive = true,
   distanceSource,
@@ -878,35 +1184,14 @@ export function LidarReadinessCard({
               {liveStatusStripText}
             </Text>
           </View>
-
-          <ChecklistRow
-            status="done"
-            title="Manual clearance safety"
-            detail="Manual distances can trigger SAFE, CAUTION, and STOP warnings."
-          />
-
-          <ChecklistRow
-            status="current"
-            title="Test LiDAR safety"
-            detail="Use sample LiDAR readings to confirm the warning system before using live distance readings."
-          />
-
-          <ChecklistRow
-            status={
-              nativeLidarAvailability?.status === "supported"
-                ? "done"
-                : "current"
-            }
-            title="Real LiDAR rear clearance"
-            detail="Use the iPhone LiDAR as a spotter-mode rear distance aid. Always confirm visually before backing."
-          />
-
-          <ChecklistRow
-            status={liveRearDistanceActive ? "current" : "future"}
-            title="Live rear distance and voice alerts"
-            detail="Live rear distance refreshes repeatedly and gives voice warnings while it is active."
-          />
-
+          <LidarSafetyStatusCard
+            manualModeActive={manualModeActive}
+            nativeLidarAvailability={nativeLidarAvailability}
+            liveRearDistanceActive={liveRearDistanceActive}
+            autoStopTriggered={autoStopTriggered}
+            liveRearDistanceNumber={liveRearDistanceNumber}
+            liveRearDistanceLabel={liveRearDistanceLabel}
+          />{" "}
           <View
             style={{
               padding: 10,
@@ -940,13 +1225,11 @@ export function LidarReadinessCard({
               {warningReason}
             </Text>
           </View>
-
           <LidarStatusRow
             label="Bridge status"
             value={bridgeStatusLabel}
             status={bridgeStatus === "not-connected" ? "planned" : "active"}
           />
-
           <View
             style={{
               padding: 10,
@@ -967,7 +1250,6 @@ export function LidarReadinessCard({
               {bridgeMessage}
             </Text>
           </View>
-
           <View
             style={{
               padding: 10,
@@ -1121,7 +1403,6 @@ export function LidarReadinessCard({
               </TouchableOpacity>
             </View>
           </View>
-
           <View
             style={{
               padding: 10,
@@ -1664,6 +1945,8 @@ export function LidarReadinessCard({
                   ) : null}
                 </View>
 
+                <LidarFieldTestChecklist />
+
                 {centerDepthReading ? (
                   <View
                     style={{
@@ -1708,7 +1991,6 @@ export function LidarReadinessCard({
               </View>
             ) : null}
           </View>
-
           <Text
             style={{
               fontSize: 10,
