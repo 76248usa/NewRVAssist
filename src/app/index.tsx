@@ -468,6 +468,7 @@ export default function Index() {
         clearanceValues={clearanceValues}
         distanceSource={distanceSource}
         stopRecoveryConfirmed={stopRecoveryConfirmed}
+        onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
         onApplyTestReading={(values) => {
           setClearanceValues(values);
           setDistanceSource("test-lidar");

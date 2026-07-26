@@ -34,6 +34,7 @@ type Props = {
   onApplyTestReading?: (values: ClearanceValues) => void;
   onApplyRealLidarReading?: (values: ClearanceValues) => void;
   onClearTestReading?: () => void;
+  onChangeStopRecoveryConfirmed?: (value: boolean) => void;
 };
 
 type BridgeStatus =
@@ -240,6 +241,7 @@ export function LidarReadinessCard({
   distanceSource,
   clearanceValues,
   stopRecoveryConfirmed,
+  onChangeStopRecoveryConfirmed,
   onApplyTestReading,
   onApplyRealLidarReading,
   onClearTestReading,
@@ -298,6 +300,23 @@ export function LidarReadinessCard({
   useEffect(() => {
     liveRearDistanceActiveRef.current = liveRearDistanceActive;
   }, [liveRearDistanceActive]);
+
+  useEffect(() => {
+    if (!stopRecoveryConfirmed) {
+      return;
+    }
+
+    autoStopCountRef.current = 0;
+    setAutoStopCount(0);
+    setAutoStopTriggered(false);
+
+    setPreviousRearInches(null);
+    setRearDistanceTrend("unknown");
+
+    setBridgeMessage(
+      "Recovery check confirmed. Auto Stop has been reset and live rear distance can be started again.",
+    );
+  }, [stopRecoveryConfirmed]);
 
   useEffect(() => {
     liveVoiceEnabledRef.current = liveVoiceEnabled;
@@ -1657,6 +1676,46 @@ export function LidarReadinessCard({
                       ? "AUTO STOP triggered. Live rear distance has been stopped."
                       : `Repeated STOP counter: ${autoStopCount} / 3`}
                   </Text>
+                  {autoStopTriggered ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        autoStopCountRef.current = 0;
+                        setAutoStopCount(0);
+                        setAutoStopTriggered(false);
+
+                        setPreviousRearInches(null);
+                        setRearDistanceTrend("unknown");
+
+                        onChangeStopRecoveryConfirmed?.(true);
+
+                        setBridgeMessage(
+                          "Recovery check confirmed. Auto Stop has been reset and live rear distance can be started again.",
+                        );
+                      }}
+                      style={{
+                        marginTop: 10,
+                        paddingVertical: 12,
+                        paddingHorizontal: 12,
+                        borderRadius: 12,
+                        backgroundColor: "#dcfce7",
+                        borderWidth: 2,
+                        borderColor: "#22c55e",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "900",
+                          color: "#166534",
+                          textAlign: "center",
+                          lineHeight: 16,
+                        }}
+                      >
+                        I got out and checked — reset Auto Stop
+                      </Text>
+                    </TouchableOpacity>
+                  ) : null}
                 </View>
                 {centerDepthReading ? (
                   <View
