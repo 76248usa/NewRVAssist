@@ -273,6 +273,9 @@ export function LidarReadinessCard({
   const [rearDistanceTrend, setRearDistanceTrend] = useState<
     "closer" | "farther" | "steady" | "unknown"
   >("unknown");
+  const autoStopCountRef = useRef(0);
+  const [autoStopCount, setAutoStopCount] = useState(0);
+  const [autoStopTriggered, setAutoStopTriggered] = useState(false);
 
   const liveRearDistanceTimerRef = useRef<ReturnType<
     typeof setInterval
@@ -356,6 +359,41 @@ export function LidarReadinessCard({
         ? "CAUTION"
         : "SAFE";
 
+  const rearCollisionCoachLevel =
+    liveRearDistanceLevel === "stop"
+      ? "stop"
+      : liveRearDistanceLevel === "caution" && rearDistanceTrend === "closer"
+        ? "caution"
+        : rearDistanceTrend === "closer"
+          ? "watch"
+          : rearDistanceTrend === "farther"
+            ? "improving"
+            : "steady";
+
+  const autoStopActive =
+    liveRearDistanceActive &&
+    liveRearDistanceLevel === "stop" &&
+    liveRearDistanceNumber !== null;
+
+  const autoStopMessage =
+    autoStopActive && liveRearDistanceNumber !== null
+      ? `AUTO STOP: Rear clearance is ${Math.round(
+          liveRearDistanceNumber,
+        )} inches. Stop backing and inspect before moving.`
+      : "AUTO STOP is armed while live rear distance is running.";
+
+  const rearCollisionCoachMessage =
+    rearCollisionCoachLevel === "stop"
+      ? "STOP: Rear obstacle is too close. Do not continue backing."
+      : rearCollisionCoachLevel === "caution"
+        ? "CAUTION: You are still moving toward the obstacle. Move in inches, not feet."
+        : rearCollisionCoachLevel === "watch"
+          ? "Watch rear clearance. You are moving closer to the obstacle."
+          : rearCollisionCoachLevel === "improving"
+            ? "Recovery improving. Rear distance is increasing."
+            : rearDistanceTrend === "steady"
+              ? "Holding steady. Keep checking visually before moving."
+              : "Waiting for enough readings to coach the next move.";
   const applyTestLidarReading = (
     label: string,
     reading: LidarClearanceReading,
@@ -403,6 +441,30 @@ export function LidarReadinessCard({
         `Caution. Rear clearance is ${rearInches} inches. Move in inches, not feet.`,
       );
     }
+  };
+
+  const forceAutoStopLiveRearDistance = (rearInches: number) => {
+    if (liveRearDistanceTimerRef.current) {
+      clearInterval(liveRearDistanceTimerRef.current);
+      liveRearDistanceTimerRef.current = null;
+    }
+
+    Speech.stop();
+    Speech.speak(
+      `Auto stop. Rear clearance is ${rearInches} inches. Stop backing and inspect before moving.`,
+    );
+
+    lastLiveVoiceLevelRef.current = null;
+    lastLiveVoiceTimeRef.current = 0;
+
+    liveReadingInProgressRef.current = false;
+    liveRearDistanceActiveRef.current = false;
+    setLiveRearDistanceActive(false);
+
+    setAutoStopTriggered(true);
+    setBridgeMessage(
+      `AUTO STOP activated after repeated STOP readings. Rear clearance is ${rearInches} inches.`,
+    );
   };
 
   const readRealLidarRearDistance = async () => {
@@ -457,11 +519,25 @@ export function LidarReadinessCard({
 
       if (liveRearDistanceActiveRef.current) {
         speakLiveRearDistanceWarning(rearDistanceNumber, rearLevel);
+
+        if (rearLevel === "stop") {
+          const nextAutoStopCount = autoStopCountRef.current + 1;
+
+          autoStopCountRef.current = nextAutoStopCount;
+          setAutoStopCount(nextAutoStopCount);
+
+          if (nextAutoStopCount >= 3) {
+            forceAutoStopLiveRearDistance(rearDistanceNumber);
+          }
+        } else {
+          autoStopCountRef.current = 0;
+          setAutoStopCount(0);
+          setAutoStopTriggered(false);
+        }
       }
 
       setLastAppliedRearInches(rearInches);
       setRealLidarRefreshCount((count) => count + 1);
-
       onApplyRealLidarReading?.({
         left: realLidarClearanceValues.left,
         right: realLidarClearanceValues.right,
@@ -502,9 +578,13 @@ export function LidarReadinessCard({
 
     lastLiveVoiceLevelRef.current = null;
     lastLiveVoiceTimeRef.current = 0;
+
+    autoStopCountRef.current = 0;
+    setAutoStopCount(0);
+    setAutoStopTriggered(false);
+
     liveRearDistanceActiveRef.current = true;
     setLiveRearDistanceActive(true);
-
     liveRearDistanceTimerRef.current = setInterval(async () => {
       if (liveReadingInProgressRef.current) {
         return;
@@ -535,6 +615,9 @@ export function LidarReadinessCard({
 
     setPreviousRearInches(null);
     setRearDistanceTrend("unknown");
+    autoStopCountRef.current = 0;
+    setAutoStopCount(0);
+    setAutoStopTriggered(false);
   };
 
   const clearTestLidarReading = () => {
@@ -1478,6 +1561,101 @@ export function LidarReadinessCard({
                         : rearDistanceTrend === "steady"
                           ? "Trend: Holding steady"
                           : "Trend: Waiting for second reading"}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    marginTop: 8,
+                    padding: 10,
+                    borderRadius: 12,
+                    backgroundColor:
+                      rearCollisionCoachLevel === "stop"
+                        ? "#fee2e2"
+                        : rearCollisionCoachLevel === "caution"
+                          ? "#fef3c7"
+                          : rearCollisionCoachLevel === "improving"
+                            ? "#dcfce7"
+                            : "#f1f5f9",
+                    borderWidth: 2,
+                    borderColor:
+                      rearCollisionCoachLevel === "stop"
+                        ? "#ef4444"
+                        : rearCollisionCoachLevel === "caution"
+                          ? "#f59e0b"
+                          : rearCollisionCoachLevel === "improving"
+                            ? "#22c55e"
+                            : "#cbd5e1",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color:
+                        rearCollisionCoachLevel === "stop"
+                          ? "#991b1b"
+                          : rearCollisionCoachLevel === "caution"
+                            ? "#92400e"
+                            : rearCollisionCoachLevel === "improving"
+                              ? "#166534"
+                              : "#475569",
+                      textAlign: "center",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {rearCollisionCoachMessage}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    marginTop: 8,
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: autoStopActive ? "#fee2e2" : "#f8fafc",
+                    borderWidth: 3,
+                    borderColor: autoStopActive ? "#dc2626" : "#cbd5e1",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "900",
+                      color: autoStopActive ? "#991b1b" : "#475569",
+                      textAlign: "center",
+                      lineHeight: 17,
+                    }}
+                  >
+                    {autoStopMessage}
+                  </Text>
+                  {autoStopActive ? (
+                    <Text
+                      style={{
+                        marginTop: 6,
+                        fontSize: 11,
+                        fontWeight: "800",
+                        color: "#991b1b",
+                        textAlign: "center",
+                        lineHeight: 16,
+                      }}
+                    >
+                      {
+                        "Do not continue backing. Get out and confirm the rear clearance visually."
+                      }
+                    </Text>
+                  ) : null}
+                  <Text
+                    style={{
+                      marginTop: 6,
+                      fontSize: 11,
+                      fontWeight: "800",
+                      color: autoStopTriggered ? "#991b1b" : "#475569",
+                      textAlign: "center",
+                      lineHeight: 16,
+                    }}
+                  >
+                    {autoStopTriggered
+                      ? "AUTO STOP triggered. Live rear distance has been stopped."
+                      : `Repeated STOP counter: ${autoStopCount} / 3`}
                   </Text>
                 </View>
                 {centerDepthReading ? (
