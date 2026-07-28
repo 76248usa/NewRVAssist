@@ -273,6 +273,203 @@ function CompactSetupSummaryCard({
   );
 }
 
+type BigNextActionCardProps = {
+  stepIndex: number;
+  totalSteps: number;
+  currentStep: unknown;
+  obstacles: SiteObstacle[];
+  clearanceValues: ClearanceValues;
+  distanceSource: DistanceSource;
+};
+
+function getStepText(currentStep: unknown) {
+  if (typeof currentStep === "object" && currentStep !== null) {
+    const step = currentStep as {
+      title?: string;
+      instruction?: string;
+      direction?: string;
+      description?: string;
+      text?: string;
+    };
+
+    return (
+      step.instruction ||
+      step.direction ||
+      step.description ||
+      step.text ||
+      step.title ||
+      "Back slowly and follow the coach."
+    );
+  }
+
+  return "Back slowly and follow the coach.";
+}
+
+function getObstacleWatchText(obstacles: SiteObstacle[]) {
+  if (obstacles.length === 0) {
+    return "Mirrors, rear clearance, and campsite edges.";
+  }
+
+  return obstacles
+    .map((obstacle) => {
+      if (obstacle === "treeLeft") return "tree on left";
+      if (obstacle === "poleRight") return "pole on right";
+      if (obstacle === "lowBranch") return "low branch / roof";
+      return "tight hookup side";
+    })
+    .join(" • ");
+}
+
+function getRearStatusText(
+  clearanceValues: ClearanceValues,
+  distanceSource: DistanceSource,
+) {
+  const rear = clearanceValues.rear.trim();
+
+  if (!rear) {
+    return distanceSource === "real-lidar"
+      ? "Waiting for rear LiDAR reading."
+      : "No rear distance entered yet.";
+  }
+
+  return `Rear clearance: ${rear} inches from ${distanceSource === "real-lidar" ? "Real LiDAR" : distanceSource === "test-lidar" ? "Test LiDAR" : "Manual Backup"}.`;
+}
+
+function BigNextActionCard({
+  stepIndex,
+  totalSteps,
+  currentStep,
+  obstacles,
+  clearanceValues,
+  distanceSource,
+}: BigNextActionCardProps) {
+  const nextActionText = getStepText(currentStep);
+  const watchText = getObstacleWatchText(obstacles);
+  const rearStatusText = getRearStatusText(clearanceValues, distanceSource);
+
+  return (
+    <View
+      style={{
+        marginTop: 14,
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: "#ecfdf5",
+        borderWidth: 2,
+        borderColor: "#22c55e",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "900",
+          color: "#166534",
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+          textAlign: "center",
+        }}
+      >
+        Next Action
+      </Text>
+
+      <Text
+        style={{
+          marginTop: 8,
+          fontSize: 15,
+          fontWeight: "900",
+          color: "#0f172a",
+          lineHeight: 21,
+          textAlign: "center",
+        }}
+      >
+        {nextActionText}
+      </Text>
+
+      <View
+        style={{
+          marginTop: 12,
+          padding: 10,
+          borderRadius: 12,
+          backgroundColor: "white",
+          borderWidth: 1,
+          borderColor: "#bbf7d0",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "900",
+            color: "#166534",
+            textTransform: "uppercase",
+            letterSpacing: 0.4,
+          }}
+        >
+          Watch
+        </Text>
+
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 12,
+            fontWeight: "800",
+            color: "#0f172a",
+            lineHeight: 17,
+          }}
+        >
+          {watchText}
+        </Text>
+      </View>
+
+      <View
+        style={{
+          marginTop: 8,
+          padding: 10,
+          borderRadius: 12,
+          backgroundColor: "white",
+          borderWidth: 1,
+          borderColor: "#bbf7d0",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "900",
+            color: "#166534",
+            textTransform: "uppercase",
+            letterSpacing: 0.4,
+          }}
+        >
+          Stop If
+        </Text>
+
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 12,
+            fontWeight: "800",
+            color: "#0f172a",
+            lineHeight: 17,
+          }}
+        >
+          LiDAR says STOP, Auto Stop triggers, or the spotter tells you to stop.
+        </Text>
+      </View>
+
+      <Text
+        style={{
+          marginTop: 10,
+          fontSize: 11,
+          fontWeight: "800",
+          color: "#166534",
+          textAlign: "center",
+          lineHeight: 16,
+        }}
+      >
+        Step {stepIndex + 1} of {totalSteps} • {rearStatusText}
+      </Text>
+    </View>
+  );
+}
+
 export default function Index() {
   const [truckLength, setTruckLength] = useState("20");
   const [trailerLength, setTrailerLength] = useState("30");
@@ -652,6 +849,15 @@ export default function Index() {
         campsiteType={campsiteType}
         obstacles={obstacles}
         scenario={scenario}
+      />
+
+      <BigNextActionCard
+        stepIndex={safeStepIndex}
+        totalSteps={steps.length}
+        currentStep={currentStep}
+        obstacles={obstacles}
+        clearanceValues={clearanceValues}
+        distanceSource={distanceSource}
       />
 
       <ObstacleDistanceInputCard
