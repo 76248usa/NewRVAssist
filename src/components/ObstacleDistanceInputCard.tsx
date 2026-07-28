@@ -35,7 +35,7 @@ export function ObstacleDistanceInputCard({
   stopRecoveryConfirmed,
   onChangeStopRecoveryConfirmed,
 }: Props) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const lastAutoSpokenStopReasonRef = useRef<string | null>(null);
 
   const leftClearance = clearanceValues.left;
@@ -92,6 +92,22 @@ export function ObstacleDistanceInputCard({
 
   const hasStopClearance = clearanceLevels.includes("stop");
 
+  const hasLidarReading =
+    distanceSource === "real-lidar" || distanceSource === "test-lidar";
+
+  const shouldAutoOpenManualBackup =
+    !hasLidarReading &&
+    (distanceSource === "manual" ||
+      (hasStopClearance && !stopRecoveryConfirmed));
+
+  useEffect(() => {
+    if (shouldAutoOpenManualBackup) {
+      setExpanded(true);
+      return;
+    }
+
+    setExpanded(false);
+  }, [shouldAutoOpenManualBackup]);
   const [autoVoiceAlertsEnabled, setAutoVoiceAlertsEnabled] = useState(true);
   useEffect(() => {
     let isMounted = true;
