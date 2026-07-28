@@ -450,15 +450,24 @@ type DistanceInputRowProps = {
   value: string;
   onChangeText: (value: string) => void;
 };
-
 function DistanceInputRow({
   label,
   value,
   onChangeText,
 }: DistanceInputRowProps) {
+  const [draftValue, setDraftValue] = useState(value);
+
+  useEffect(() => {
+    setDraftValue(value);
+  }, [value]);
+
   const parsedValue = parseDistance(value);
   const level = getClearanceLevel(parsedValue);
   const levelStyles = getLevelStyles(level);
+
+  const commitDraftValue = () => {
+    onChangeText(draftValue.trim());
+  };
 
   return (
     <View
@@ -501,8 +510,10 @@ function DistanceInputRow({
         </View>
 
         <TextInput
-          value={value}
-          onChangeText={onChangeText}
+          value={draftValue}
+          onChangeText={setDraftValue}
+          onBlur={commitDraftValue}
+          onSubmitEditing={commitDraftValue}
           keyboardType="number-pad"
           inputMode="numeric"
           returnKeyType="done"

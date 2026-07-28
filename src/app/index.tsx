@@ -26,6 +26,7 @@ import {
 import { ParkingType, guidanceByType } from "../constants/parkingGuidance";
 import { ClearanceValues } from "../types/clearance";
 import { DistanceSource } from "../types/lidar";
+import { getClearanceLevel, parseDistance } from "../utils/clearanceWarnings";
 
 const RIG_SETUP_STORAGE_KEY = "rvParkingRigSetup";
 
@@ -343,9 +344,69 @@ function BigNextActionCard({
   clearanceValues,
   distanceSource,
 }: BigNextActionCardProps) {
-  const nextActionText = getStepText(currentStep);
+  const rearDistanceNumber = parseDistance(clearanceValues.rear);
+  const rearLevel = getClearanceLevel(rearDistanceNumber);
+
+  const lidarSourceText =
+    distanceSource === "real-lidar"
+      ? "Real LiDAR"
+      : distanceSource === "test-lidar"
+        ? "Test LiDAR"
+        : "Manual Backup";
+
+  const normalNextActionText = getStepText(currentStep);
   const watchText = getObstacleWatchText(obstacles);
   const rearStatusText = getRearStatusText(clearanceValues, distanceSource);
+
+  const isStopOverride = rearLevel === "stop" && rearDistanceNumber !== null;
+  const isCautionOverride =
+    rearLevel === "caution" && rearDistanceNumber !== null;
+
+  const cardBackgroundColor = isStopOverride
+    ? "#fee2e2"
+    : isCautionOverride
+      ? "#fef3c7"
+      : "#ecfdf5";
+
+  const cardBorderColor = isStopOverride
+    ? "#dc2626"
+    : isCautionOverride
+      ? "#f59e0b"
+      : "#22c55e";
+
+  const titleColor = isStopOverride
+    ? "#991b1b"
+    : isCautionOverride
+      ? "#92400e"
+      : "#166534";
+
+  const nextActionText = isStopOverride
+    ? "STOP NOW"
+    : isCautionOverride
+      ? "Back in inches only."
+      : normalNextActionText;
+
+  const watchOverrideText = isStopOverride
+    ? `Rear clearance is ${Math.round(
+        rearDistanceNumber,
+      )} inches from ${lidarSourceText}.`
+    : isCautionOverride
+      ? `Rear clearance is ${Math.round(
+          rearDistanceNumber,
+        )} inches. Watch rear clearance and selected obstacles.`
+      : watchText;
+
+  const stopIfText = isStopOverride
+    ? "Already stopped. Get out and inspect before moving again."
+    : isCautionOverride
+      ? "Stop if the distance keeps shrinking, LiDAR says STOP, or the spotter tells you to stop."
+      : "LiDAR says STOP, Auto Stop triggers, or the spotter tells you to stop.";
+
+  const statusLine = isStopOverride
+    ? `Step ${stepIndex + 1} of ${totalSteps} • STOP override active`
+    : isCautionOverride
+      ? `Step ${stepIndex + 1} of ${totalSteps} • CAUTION override active`
+      : `Step ${stepIndex + 1} of ${totalSteps} • ${rearStatusText}`;
 
   return (
     <View
@@ -353,16 +414,16 @@ function BigNextActionCard({
         marginTop: 14,
         padding: 14,
         borderRadius: 16,
-        backgroundColor: "#ecfdf5",
+        backgroundColor: cardBackgroundColor,
         borderWidth: 2,
-        borderColor: "#22c55e",
+        borderColor: cardBorderColor,
       }}
     >
       <Text
         style={{
           fontSize: 12,
           fontWeight: "900",
-          color: "#166534",
+          color: titleColor,
           textTransform: "uppercase",
           letterSpacing: 0.5,
           textAlign: "center",
@@ -374,10 +435,10 @@ function BigNextActionCard({
       <Text
         style={{
           marginTop: 8,
-          fontSize: 15,
+          fontSize: isStopOverride ? 22 : 15,
           fontWeight: "900",
-          color: "#0f172a",
-          lineHeight: 21,
+          color: isStopOverride ? "#991b1b" : "#0f172a",
+          lineHeight: isStopOverride ? 28 : 21,
           textAlign: "center",
         }}
       >
@@ -391,14 +452,14 @@ function BigNextActionCard({
           borderRadius: 12,
           backgroundColor: "white",
           borderWidth: 1,
-          borderColor: "#bbf7d0",
+          borderColor: cardBorderColor,
         }}
       >
         <Text
           style={{
             fontSize: 11,
             fontWeight: "900",
-            color: "#166534",
+            color: titleColor,
             textTransform: "uppercase",
             letterSpacing: 0.4,
           }}
@@ -415,7 +476,7 @@ function BigNextActionCard({
             lineHeight: 17,
           }}
         >
-          {watchText}
+          {watchOverrideText}
         </Text>
       </View>
 
@@ -426,14 +487,14 @@ function BigNextActionCard({
           borderRadius: 12,
           backgroundColor: "white",
           borderWidth: 1,
-          borderColor: "#bbf7d0",
+          borderColor: cardBorderColor,
         }}
       >
         <Text
           style={{
             fontSize: 11,
             fontWeight: "900",
-            color: "#166534",
+            color: titleColor,
             textTransform: "uppercase",
             letterSpacing: 0.4,
           }}
@@ -450,7 +511,7 @@ function BigNextActionCard({
             lineHeight: 17,
           }}
         >
-          LiDAR says STOP, Auto Stop triggers, or the spotter tells you to stop.
+          {stopIfText}
         </Text>
       </View>
 
@@ -459,17 +520,16 @@ function BigNextActionCard({
           marginTop: 10,
           fontSize: 11,
           fontWeight: "800",
-          color: "#166534",
+          color: titleColor,
           textAlign: "center",
           lineHeight: 16,
         }}
       >
-        Step {stepIndex + 1} of {totalSteps} • {rearStatusText}
+        {statusLine}
       </Text>
     </View>
   );
 }
-
 export default function Index() {
   const [truckLength, setTruckLength] = useState("20");
   const [trailerLength, setTrailerLength] = useState("30");

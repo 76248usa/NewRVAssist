@@ -14,11 +14,11 @@ import { DistanceWarningSummaryCard } from "./DistanceWarningSummaryCard";
 import { GetOutAndLookCard } from "./GetOutAndLookCard";
 import { ParkingDiagram } from "./ParkingDiagram";
 import { PracticeSession } from "./PracticeHistoryCard";
-import { PracticeAction } from "./PracticeModeControls";
+
+import { PracticeAction, PracticeModeControls } from "./PracticeModeControls";
 import { RecoveryCoachCard } from "./RecoveryCoachCard";
 import { SessionStats } from "./SessionStatsCard";
 import { SiteObstacle } from "./SiteObstacleSelector";
-import { SmartNextMoveCard } from "./SmartNextMoveCard";
 import { SteeringWheel } from "./SteeringWheel";
 
 const PRACTICE_HISTORY_STORAGE_KEY = "rvParkingPracticeHistory";
@@ -793,6 +793,8 @@ export function GuidanceCard({
       return;
     }
   }
+  const showRecoveryCoach =
+    jackknifeAutoStopActive || isRecoveringFromJackknife || recoveryComplete;
 
   return (
     <View
@@ -1106,6 +1108,11 @@ export function GuidanceCard({
           parkingType={parkingType}
         />
 
+        <PracticeModeControls
+          practiceAction={practiceAction}
+          onPracticeAction={handlePracticeAction}
+          onResetSimulation={resetSimulation}
+        />
         {hasAnyClearanceValue ? (
           <DistanceWarningSummaryCard
             clearanceItems={clearanceItems}
@@ -1120,7 +1127,7 @@ export function GuidanceCard({
           obstacles={obstacles}
         />
 
-        <SmartNextMoveCard
+        {/* <SmartNextMoveCard
           stepIndex={stepIndex}
           backingSide={backingSide}
           campsiteType={campsiteType}
@@ -1131,14 +1138,15 @@ export function GuidanceCard({
           clearanceValues={clearanceValues}
           distanceSource={distanceSource}
           stopRecoveryConfirmed={stopRecoveryConfirmed}
-        />
-
-        <RecoveryCoachCard
-          backingSide={backingSide}
-          obstacles={obstacles}
-          voiceEnabled={voiceEnabled}
-          campsiteType={campsiteType}
-        />
+        /> */}
+        {showRecoveryCoach ? (
+          <RecoveryCoachCard
+            backingSide={backingSide}
+            obstacles={obstacles}
+            voiceEnabled={voiceEnabled}
+            campsiteType={campsiteType}
+          />
+        ) : null}
 
         {jackknifeAutoStopActive ? (
           <View
