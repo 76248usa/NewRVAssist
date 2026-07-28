@@ -19,8 +19,6 @@ import { ParkingTypeSelector } from "../components/ParkingTypeSelector";
 import { ReadyToBackChecklistCard } from "../components/ReadyToBackChecklistCard";
 import { RigSetupCard } from "../components/RigSetupCard";
 import { SafetyDisclaimerCard } from "../components/SafetyDisclaimerCard";
-import { SavedRigSetupCard } from "../components/SavedRigSetupCard";
-import { SetupReviewCard } from "../components/SetupReviewCard";
 import {
   SiteObstacle,
   SiteObstacleSelector,
@@ -56,6 +54,223 @@ function getObstacleWarning(obstacles: SiteObstacle[]) {
   }
 
   return warnings;
+}
+
+function getParkingTypeLabel(parkingType: ParkingType) {
+  if (parkingType === "pull-through") return "Pull-through";
+  return "Back-in";
+}
+
+function getCampsiteTypeLabel(campsiteType: CampsiteType) {
+  if (campsiteType === "angledSite") return "Angled site";
+  if (campsiteType === "tightCampgroundRoad") return "Tight campground road";
+  if (campsiteType === "narrowDriveway") return "Narrow driveway";
+  return "Straight back-in";
+}
+
+function getObstacleLabel(obstacle: SiteObstacle) {
+  if (obstacle === "poleRight") return "Pole right";
+  if (obstacle === "treeLeft") return "Tree left";
+  if (obstacle === "lowBranch") return "Low branch";
+  if (obstacle === "tightHookupSide") return "Tight hookup side";
+  return obstacle;
+}
+
+type CompactSetupSummaryCardProps = {
+  truckLength: string;
+  trailerLength: string;
+  totalLength: number;
+  backingSide: "left" | "right";
+  scenario: "easy" | "normal" | "tight";
+  parkingType: ParkingType;
+  selectParkingType: (type: ParkingType) => void;
+  campsiteType: CampsiteType;
+  setCampsiteType: (value: CampsiteType) => void;
+  obstacles: SiteObstacle[];
+  setObstacles: (value: SiteObstacle[]) => void;
+  onEditRigSetup: () => void;
+};
+
+function CompactSetupSummaryCard({
+  truckLength,
+  trailerLength,
+  totalLength,
+  backingSide,
+  scenario,
+  parkingType,
+  selectParkingType,
+  campsiteType,
+  setCampsiteType,
+  obstacles,
+  setObstacles,
+  onEditRigSetup,
+}: CompactSetupSummaryCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
+  const obstacleText =
+    obstacles.length === 0
+      ? "None selected"
+      : obstacles.map(getObstacleLabel).join(", ");
+
+  return (
+    <View
+      style={{
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 16,
+        backgroundColor: "#f8fafc",
+        borderWidth: 1,
+        borderColor: "#cbd5e1",
+      }}
+    >
+      <TouchableOpacity
+        onPress={() => setExpanded((value) => !value)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "900",
+              color: "#0f172a",
+            }}
+          >
+            Setup Summary
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              fontWeight: "800",
+              color: "#475569",
+              lineHeight: 16,
+            }}
+          >
+            {`${getParkingTypeLabel(parkingType)} • ${getCampsiteTypeLabel(
+              campsiteType,
+            )} • ${totalLength} ft`}
+          </Text>
+        </View>
+
+        <View
+          style={{
+            paddingVertical: 5,
+            paddingHorizontal: 9,
+            borderRadius: 999,
+            backgroundColor: expanded ? "#e0f2fe" : "#f1f5f9",
+            borderWidth: 1,
+            borderColor: expanded ? "#38bdf8" : "#cbd5e1",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "900",
+              color: expanded ? "#075985" : "#475569",
+            }}
+          >
+            {expanded ? "Hide" : "Edit"}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      <View
+        style={{
+          marginTop: 10,
+          gap: 6,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: "#0f172a",
+            lineHeight: 16,
+          }}
+        >
+          Rig: Truck {truckLength} ft + trailer {trailerLength} ft ={" "}
+          {totalLength} ft
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: "#0f172a",
+            lineHeight: 16,
+          }}
+        >
+          Backing side: {backingSide === "left" ? "Left" : "Right"} • Scenario:{" "}
+          {scenario}
+        </Text>
+
+        <Text
+          style={{
+            fontSize: 11,
+            fontWeight: "800",
+            color: obstacles.length > 0 ? "#92400e" : "#475569",
+            lineHeight: 16,
+          }}
+        >
+          Obstacles: {obstacleText}
+        </Text>
+      </View>
+
+      {expanded ? (
+        <View style={{ marginTop: 12 }}>
+          <TouchableOpacity
+            onPress={onEditRigSetup}
+            style={{
+              padding: 12,
+              borderRadius: 12,
+              backgroundColor: "#e0f2fe",
+              borderWidth: 1,
+              borderColor: "#38bdf8",
+            }}
+          >
+            <Text
+              style={{
+                color: "#075985",
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "900",
+              }}
+            >
+              Edit Rig Setup
+            </Text>
+          </TouchableOpacity>
+
+          <ParkingTypeSelector
+            parkingType={parkingType}
+            selectParkingType={selectParkingType}
+          />
+
+          {parkingType === "back-in" ? (
+            <CampsiteSetupCard
+              campsiteType={campsiteType}
+              setCampsiteType={setCampsiteType}
+            />
+          ) : null}
+
+          <SiteObstacleSelector
+            obstacles={obstacles}
+            setObstacles={setObstacles}
+          />
+
+          <ReadyToBackChecklistCard
+            parkingType={parkingType}
+            obstacles={obstacles}
+          />
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 export default function Index() {
@@ -160,6 +375,7 @@ export default function Index() {
   const handleStopRecoveryConfirmedChange = (value: boolean) => {
     setStopRecoveryConfirmed(value);
   };
+
   useEffect(() => {
     async function loadSavedObstacles() {
       try {
@@ -189,6 +405,7 @@ export default function Index() {
 
     loadSavedObstacles();
   }, []);
+
   useEffect(() => {
     async function saveObstacles() {
       try {
@@ -322,6 +539,7 @@ export default function Index() {
       <AppHeaderCard totalLength={headerTotalLength} />
       <HowToUseCard />
       <SafetyDisclaimerCard />
+
       {isEditingRigSetup ? (
         <>
           <RigSetupCard
@@ -375,33 +593,22 @@ export default function Index() {
           </TouchableOpacity>
         </>
       ) : (
-        <SavedRigSetupCard
+        <CompactSetupSummaryCard
           truckLength={truckLength}
           trailerLength={trailerLength}
           totalLength={totalLength}
           backingSide={backingSide}
           scenario={scenario}
-          onEditSetup={startEditingRigSetup}
-        />
-      )}
-      <ParkingTypeSelector
-        parkingType={parkingType}
-        selectParkingType={selectParkingType}
-      />
-      {parkingType === "back-in" ? (
-        <CampsiteSetupCard
+          parkingType={parkingType}
+          selectParkingType={selectParkingType}
           campsiteType={campsiteType}
           setCampsiteType={setCampsiteType}
+          obstacles={obstacles}
+          setObstacles={setObstacles}
+          onEditRigSetup={startEditingRigSetup}
         />
-      ) : null}
-      <SiteObstacleSelector obstacles={obstacles} setObstacles={setObstacles} />
-      <SetupReviewCard
-        parkingType={parkingType}
-        backingSide={backingSide}
-        scenario={scenario}
-        campsiteType={campsiteType}
-        obstacles={obstacles}
-      />
+      )}
+
       {obstacleWarnings.length > 0 ? (
         <View
           style={{
@@ -438,16 +645,13 @@ export default function Index() {
           </Text>
         </View>
       ) : null}
+
       <CurrentCoachModeCard
         parkingType={parkingType}
         backingSide={backingSide}
         campsiteType={campsiteType}
         obstacles={obstacles}
         scenario={scenario}
-      />
-      <ReadyToBackChecklistCard
-        parkingType={parkingType}
-        obstacles={obstacles}
       />
 
       <ObstacleDistanceInputCard
@@ -460,7 +664,7 @@ export default function Index() {
         }}
         distanceSource={distanceSource}
         stopRecoveryConfirmed={stopRecoveryConfirmed}
-        onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
+        onChangeStopRecoveryConfirmed={handleStopRecoveryConfirmedChange}
       />
 
       <LidarReadinessCard
@@ -495,6 +699,7 @@ export default function Index() {
           setStopRecoveryConfirmed(false);
         }}
       />
+
       <GuidanceCard
         currentStep={currentStep}
         stepIndex={safeStepIndex}
@@ -513,6 +718,7 @@ export default function Index() {
         distanceSource={distanceSource}
         stopRecoveryConfirmed={stopRecoveryConfirmed}
       />
+
       <AppFooterDisclaimer />
     </ScrollView>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { Text, View } from "react-native";
 import { ParkingType } from "../constants/parkingGuidance";
 import { CampsiteType } from "./CampsiteSetupCard";
 import { SiteObstacle } from "./SiteObstacleSelector";
@@ -184,7 +184,7 @@ export function SetupReviewCard({
         overflow: "hidden",
       }}
     >
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => setExpanded((current) => !current)}
         activeOpacity={0.85}
         style={{
@@ -263,7 +263,7 @@ export function SetupReviewCard({
         >
           {expanded ? "Tap to hide details" : "Tap for details"}
         </Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {expanded ? (
         <View style={{ padding: 14, paddingTop: 0 }}>

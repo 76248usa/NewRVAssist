@@ -605,6 +605,7 @@ function LidarFieldTestChecklist() {
     </View>
   );
 }
+
 export function LidarReadinessCard({
   manualModeActive = true,
   distanceSource,
@@ -693,7 +694,20 @@ export function LidarReadinessCard({
 
   const distanceSourceLabel = getDistanceSourceLabel(distanceSource);
   const bridgeStatusLabel = getBridgeStatusLabel(bridgeStatus);
+  const parkingModeActive =
+    liveRearDistanceActive || distanceSource === "real-lidar";
 
+  const parkingModeTitle = autoStopTriggered
+    ? "AUTO STOPPED"
+    : parkingModeActive
+      ? "PARKING MODE ACTIVE"
+      : "PARKING MODE READY";
+
+  const parkingModeMessage = autoStopTriggered
+    ? "Do not continue backing. Get out and check behind the RV."
+    : parkingModeActive
+      ? "Watch rear distance, trend, and Auto Stop."
+      : "Check LiDAR readiness, then start Live Rear Distance.";
   const clearanceItems: ClearanceItem[] = [
     {
       key: "left",
@@ -1223,6 +1237,57 @@ export function LidarReadinessCard({
         </View>
       </TouchableOpacity>
 
+      <View
+        style={{
+          marginTop: 10,
+          padding: 10,
+          borderRadius: 12,
+          backgroundColor: autoStopTriggered
+            ? "#fee2e2"
+            : parkingModeActive
+              ? "#dcfce7"
+              : "#f1f5f9",
+          borderWidth: 2,
+          borderColor: autoStopTriggered
+            ? "#dc2626"
+            : parkingModeActive
+              ? "#22c55e"
+              : "#cbd5e1",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "900",
+            color: autoStopTriggered
+              ? "#991b1b"
+              : parkingModeActive
+                ? "#166534"
+                : "#475569",
+            textAlign: "center",
+            lineHeight: 16,
+          }}
+        >
+          {parkingModeTitle}
+        </Text>
+
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 11,
+            fontWeight: "800",
+            color: autoStopTriggered
+              ? "#991b1b"
+              : parkingModeActive
+                ? "#166534"
+                : "#475569",
+            textAlign: "center",
+            lineHeight: 15,
+          }}
+        >
+          {parkingModeMessage}
+        </Text>
+      </View>
       {expanded ? (
         <View style={{ marginTop: 12, gap: 10 }}>
           <View

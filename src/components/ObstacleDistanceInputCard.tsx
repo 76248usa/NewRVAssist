@@ -176,7 +176,7 @@ export function ObstacleDistanceInputCard({
         borderColor: "#cbd5e1",
       }}
     >
-      <TouchableOpacity
+      {/* <TouchableOpacity
         onPress={() => setExpanded((current) => !current)}
         activeOpacity={0.85}
       >
@@ -198,7 +198,7 @@ export function ObstacleDistanceInputCard({
                 letterSpacing: 0.5,
               }}
             >
-              Obstacle Distance Check
+              Manual Distance Backup
             </Text>
 
             <Text
@@ -224,144 +224,205 @@ export function ObstacleDistanceInputCard({
             {expanded ? "Hide" : "Show"}
           </Text>
         </View>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
-      {expanded || (hasStopClearance && !stopRecoveryConfirmed) ? (
-        <>
-          <DistanceWarningSummaryCard
-            clearanceItems={clearanceItems}
-            distanceSource={distanceSource}
-            stopRecoveryConfirmed={stopRecoveryConfirmed}
-            onChangeStopRecoveryConfirmed={onChangeStopRecoveryConfirmed}
-          />
-          <TouchableOpacity
-            onPress={async () => {
-              setAutoVoiceAlertsEnabled((current) => {
-                const nextValue = !current;
-
-                AsyncStorage.setItem(
-                  AUTO_STOP_VOICE_ALERTS_KEY,
-                  String(nextValue),
-                ).catch(() => {
-                  // Ignore storage errors and keep the UI responsive.
-                });
-
-                return nextValue;
-              });
-
-              Speech.stop();
-            }}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 6,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              backgroundColor: autoVoiceAlertsEnabled ? "#0f172a" : "#64748b",
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                textAlign: "center",
-                fontSize: 13,
-                fontWeight: "900",
-              }}
-            >
-              {autoVoiceAlertsEnabled
-                ? "Auto STOP Voice Alerts: On"
-                : "Auto STOP Voice Alerts: Off"}
-            </Text>
-          </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => setExpanded((value) => !value)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+        }}
+      >
+        <View style={{ flex: 1 }}>
           <Text
             style={{
-              marginTop: 12,
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: "900",
-              color: "#334155",
+              color: "#0f172a",
             }}
           >
-            Selected setup
+            Manual Distance Backup
           </Text>
+
           <Text
             style={{
               marginTop: 4,
-              fontSize: 12,
-              fontWeight: "700",
+              fontSize: 11,
+              fontWeight: "800",
               color: "#475569",
-              lineHeight: 17,
+              lineHeight: 16,
             }}
           >
-            {parkingType === "pull-through" ? "Pull-through" : "Back-in"}
-            {obstacleText}
+            Use if LiDAR is unavailable or a spotter measured the clearance.
           </Text>
-          <View style={{ marginTop: 12, gap: 10 }}>
-            <DistanceInputRow
-              label="Left side clearance"
-              value={leftClearance}
-              onChangeText={setLeftClearance}
-            />
+        </View>
 
-            <DistanceInputRow
-              label="Right side clearance"
-              value={rightClearance}
-              onChangeText={setRightClearance}
-            />
-
-            <DistanceInputRow
-              label="Rear clearance"
-              value={rearClearance}
-              onChangeText={setRearClearance}
-            />
-
-            <DistanceInputRow
-              label="Roof / branch clearance"
-              value={roofClearance}
-              onChangeText={setRoofClearance}
-            />
-          </View>
+        <View
+          style={{
+            paddingVertical: 5,
+            paddingHorizontal: 9,
+            borderRadius: 999,
+            backgroundColor: expanded ? "#e0f2fe" : "#f1f5f9",
+            borderWidth: 1,
+            borderColor: expanded ? "#38bdf8" : "#cbd5e1",
+          }}
+        >
           <Text
             style={{
-              marginTop: 10,
-              fontSize: 11,
-              fontWeight: "700",
-              color: "#64748b",
-              lineHeight: 16,
-              textAlign: "center",
+              fontSize: 10,
+              fontWeight: "900",
+              color: expanded ? "#075985" : "#475569",
             }}
           >
-            Enter distances in inches. 36 inches or less = caution. 18 inches or
-            less = stop and get out to look.
+            {expanded ? "Hide" : "Show"}
           </Text>
-          <TouchableOpacity
-            onPress={() => {
-              onChangeClearanceValues({
-                left: "",
-                right: "",
-                rear: "",
-                roof: "",
-              });
-            }}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              backgroundColor: "#e2e8f0",
-            }}
-          >
-            <Text
-              style={{
-                textAlign: "center",
-                fontSize: 13,
-                fontWeight: "900",
-                color: "#0f172a",
-              }}
-            >
-              Reset distances
-            </Text>
-          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+
+      {expanded ? (
+        <>
+          {expanded || (hasStopClearance && !stopRecoveryConfirmed) ? (
+            <>
+              <DistanceWarningSummaryCard
+                clearanceItems={clearanceItems}
+                distanceSource={distanceSource}
+                stopRecoveryConfirmed={stopRecoveryConfirmed}
+                onChangeStopRecoveryConfirmed={onChangeStopRecoveryConfirmed}
+              />
+              <TouchableOpacity
+                onPress={async () => {
+                  setAutoVoiceAlertsEnabled((current) => {
+                    const nextValue = !current;
+
+                    AsyncStorage.setItem(
+                      AUTO_STOP_VOICE_ALERTS_KEY,
+                      String(nextValue),
+                    ).catch(() => {
+                      // Ignore storage errors and keep the UI responsive.
+                    });
+
+                    return nextValue;
+                  });
+
+                  Speech.stop();
+                }}
+                activeOpacity={0.85}
+                style={{
+                  marginTop: 6,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: autoVoiceAlertsEnabled
+                    ? "#0f172a"
+                    : "#64748b",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: "900",
+                  }}
+                >
+                  {autoVoiceAlertsEnabled
+                    ? "Auto STOP Voice Alerts: On"
+                    : "Auto STOP Voice Alerts: Off"}
+                </Text>
+              </TouchableOpacity>
+              <Text
+                style={{
+                  marginTop: 12,
+                  fontSize: 12,
+                  fontWeight: "900",
+                  color: "#334155",
+                }}
+              >
+                Selected setup
+              </Text>
+              <Text
+                style={{
+                  marginTop: 4,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: "#475569",
+                  lineHeight: 17,
+                }}
+              >
+                {parkingType === "pull-through" ? "Pull-through" : "Back-in"}
+                {obstacleText}
+              </Text>
+              <View style={{ marginTop: 12, gap: 10 }}>
+                <DistanceInputRow
+                  label="Left side clearance"
+                  value={leftClearance}
+                  onChangeText={setLeftClearance}
+                />
+
+                <DistanceInputRow
+                  label="Right side clearance"
+                  value={rightClearance}
+                  onChangeText={setRightClearance}
+                />
+
+                <DistanceInputRow
+                  label="Rear clearance"
+                  value={rearClearance}
+                  onChangeText={setRearClearance}
+                />
+
+                <DistanceInputRow
+                  label="Roof / branch clearance"
+                  value={roofClearance}
+                  onChangeText={setRoofClearance}
+                />
+              </View>
+              <Text
+                style={{
+                  marginTop: 10,
+                  fontSize: 11,
+                  fontWeight: "700",
+                  color: "#64748b",
+                  lineHeight: 16,
+                  textAlign: "center",
+                }}
+              >
+                Enter distances in inches. 36 inches or less = caution. 18
+                inches or less = stop and get out to look.
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  onChangeClearanceValues({
+                    left: "",
+                    right: "",
+                    rear: "",
+                    roof: "",
+                  });
+                }}
+                activeOpacity={0.85}
+                style={{
+                  marginTop: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 12,
+                  borderRadius: 12,
+                  backgroundColor: "#e2e8f0",
+                }}
+              >
+                <Text
+                  style={{
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: "900",
+                    color: "#0f172a",
+                  }}
+                >
+                  Reset distances
+                </Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
         </>
       ) : null}
     </View>

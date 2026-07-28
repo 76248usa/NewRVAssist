@@ -822,7 +822,7 @@ export function GuidanceCard({
           style={{
             color: "white",
             textAlign: "center",
-            fontSize: 24,
+            fontSize: 16,
             fontWeight: "900",
           }}
         >
@@ -1066,7 +1066,7 @@ export function GuidanceCard({
         <Text
           style={{
             marginTop: 12,
-            fontSize: 22,
+            fontSize: 14,
             fontWeight: "bold",
             color: "#0f172a",
           }}
@@ -1074,7 +1074,7 @@ export function GuidanceCard({
           {currentStep.title}
         </Text>
 
-        <Text style={{ marginTop: 10, fontSize: 16, lineHeight: 23 }}>
+        <Text style={{ marginTop: 10, fontSize: 12, lineHeight: 15 }}>
           {currentStep.instruction}
         </Text>
 
