@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { ParkingType } from "../constants/parkingGuidance";
 import { CampsiteType } from "./CampsiteSetupCard";
 import { SiteObstacle } from "./SiteObstacleSelector";
@@ -12,6 +12,8 @@ type Props = {
   campsiteType: CampsiteType;
   obstacles: SiteObstacle[];
   scenario: Scenario;
+  appMode: "parking" | "practice";
+  setAppMode: (mode: "parking" | "practice") => void;
 };
 
 function getParkingTypeLabel(parkingType: ParkingType) {
@@ -56,6 +58,8 @@ export function CurrentCoachModeCard({
   campsiteType,
   obstacles,
   scenario,
+  appMode,
+  setAppMode,
 }: Props) {
   return (
     <View
@@ -79,6 +83,95 @@ export function CurrentCoachModeCard({
       >
         Smart Coach Active
       </Text>
+
+      <View
+        style={{
+          marginTop: 14,
+          padding: 12,
+          borderRadius: 16,
+          backgroundColor: "white",
+          borderWidth: 1,
+          borderColor: "#cbd5e1",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "900",
+            color: "#0f172a",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            textAlign: "center",
+          }}
+        >
+          Use Mode
+        </Text>
+
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          <TouchableOpacity
+            onPress={() => setAppMode("parking")}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              paddingHorizontal: 10,
+              borderRadius: 12,
+              backgroundColor: appMode === "parking" ? "#16a34a" : "#f1f5f9",
+              borderWidth: 1,
+              borderColor: appMode === "parking" ? "#16a34a" : "#cbd5e1",
+            }}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "900",
+                color: appMode === "parking" ? "white" : "#475569",
+              }}
+            >
+              Parking Coach
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setAppMode("practice")}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              paddingHorizontal: 10,
+              borderRadius: 12,
+              backgroundColor: appMode === "practice" ? "#7c3aed" : "#f1f5f9",
+              borderWidth: 1,
+              borderColor: appMode === "practice" ? "#7c3aed" : "#cbd5e1",
+            }}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "900",
+                color: appMode === "practice" ? "white" : "#475569",
+              }}
+            >
+              Practice Simulator
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text
+          style={{
+            marginTop: 8,
+            fontSize: 11,
+            fontWeight: "800",
+            color: "#475569",
+            textAlign: "center",
+            lineHeight: 16,
+          }}
+        >
+          {appMode === "parking"
+            ? "Real parking view: next action, LiDAR, and safety guidance."
+            : "Practice view: simulator controls, jackknife practice, and recovery training."}
+        </Text>
+      </View>
 
       <Text
         style={{

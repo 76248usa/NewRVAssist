@@ -542,7 +542,7 @@ export default function Index() {
   const [isEditingRigSetup, setIsEditingRigSetup] = useState(false);
   const [parkingType, setParkingType] = useState<ParkingType>("back-in");
   const [stepIndex, setStepIndex] = useState(0);
-
+  const [appMode, setAppMode] = useState<"parking" | "practice">("parking");
   const [backingSide, setBackingSide] = useState<"left" | "right">("left");
   const [scenario, setScenario] = useState<"easy" | "normal" | "tight">(
     "normal",
@@ -796,7 +796,6 @@ export default function Index() {
       <AppHeaderCard totalLength={headerTotalLength} />
       <HowToUseCard />
       <SafetyDisclaimerCard />
-
       {isEditingRigSetup ? (
         <>
           <RigSetupCard
@@ -865,7 +864,6 @@ export default function Index() {
           onEditRigSetup={startEditingRigSetup}
         />
       )}
-
       {obstacleWarnings.length > 0 ? (
         <View
           style={{
@@ -902,24 +900,113 @@ export default function Index() {
           </Text>
         </View>
       ) : null}
-
       <CurrentCoachModeCard
         parkingType={parkingType}
         backingSide={backingSide}
         campsiteType={campsiteType}
         obstacles={obstacles}
         scenario={scenario}
+        appMode={appMode}
+        setAppMode={setAppMode}
       />
+      <View
+        style={{
+          marginTop: 14,
+          padding: 12,
+          borderRadius: 16,
+          backgroundColor: "white",
+          borderWidth: 1,
+          borderColor: "#cbd5e1",
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "900",
+            color: "#0f172a",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+            textAlign: "center",
+          }}
+        >
+          Use Mode
+        </Text>
 
-      <BigNextActionCard
-        stepIndex={safeStepIndex}
-        totalSteps={steps.length}
-        currentStep={currentStep}
-        obstacles={obstacles}
-        clearanceValues={clearanceValues}
-        distanceSource={distanceSource}
-      />
+        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+          {/* <TouchableOpacity
+            onPress={() => setAppMode("parking")}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              paddingHorizontal: 10,
+              borderRadius: 12,
+              backgroundColor: appMode === "parking" ? "#16a34a" : "#f1f5f9",
+              borderWidth: 1,
+              borderColor: appMode === "parking" ? "#16a34a" : "#cbd5e1",
+            }}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "900",
+                color: appMode === "parking" ? "white" : "#475569",
+              }}
+            >
+              Parking Coach
+            </Text>
+          </TouchableOpacity> */}
 
+          {/* <TouchableOpacity
+            onPress={() => setAppMode("practice")}
+            style={{
+              flex: 1,
+              paddingVertical: 12,
+              paddingHorizontal: 10,
+              borderRadius: 12,
+              backgroundColor: appMode === "practice" ? "#7c3aed" : "#f1f5f9",
+              borderWidth: 1,
+              borderColor: appMode === "practice" ? "#7c3aed" : "#cbd5e1",
+            }}
+          >
+            <Text
+              style={{
+                textAlign: "center",
+                fontSize: 12,
+                fontWeight: "900",
+                color: appMode === "practice" ? "white" : "#475569",
+              }}
+            >
+              Practice Simulator
+            </Text>
+          </TouchableOpacity> */}
+        </View>
+
+        <Text
+          style={{
+            marginTop: 8,
+            fontSize: 11,
+            fontWeight: "800",
+            color: "#475569",
+            textAlign: "center",
+            lineHeight: 16,
+          }}
+        >
+          {appMode === "parking"
+            ? "Real parking view: next action, LiDAR, and safety guidance."
+            : "Practice view: simulator controls, jackknife practice, and recovery training."}
+        </Text>
+      </View>
+      {appMode === "parking" ? (
+        <BigNextActionCard
+          stepIndex={safeStepIndex}
+          totalSteps={steps.length}
+          currentStep={currentStep}
+          obstacles={obstacles}
+          clearanceValues={clearanceValues}
+          distanceSource={distanceSource}
+        />
+      ) : null}
       <ObstacleDistanceInputCard
         parkingType={parkingType}
         obstacles={obstacles}
@@ -932,40 +1019,40 @@ export default function Index() {
         stopRecoveryConfirmed={stopRecoveryConfirmed}
         onChangeStopRecoveryConfirmed={handleStopRecoveryConfirmedChange}
       />
-
-      <LidarReadinessCard
-        manualModeActive={true}
-        clearanceValues={clearanceValues}
-        distanceSource={distanceSource}
-        stopRecoveryConfirmed={stopRecoveryConfirmed}
-        onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
-        onApplyTestReading={(values) => {
-          setClearanceValues(values);
-          setDistanceSource("test-lidar");
-          setStopRecoveryConfirmed(false);
-        }}
-        onApplyRealLidarReading={(values) => {
-          setClearanceValues({
-            left: values.left,
-            right: values.right,
-            rear: values.rear,
-            roof: values.roof,
-          });
-          setDistanceSource("real-lidar");
-          setStopRecoveryConfirmed(false);
-        }}
-        onClearTestReading={() => {
-          setClearanceValues({
-            left: "",
-            right: "",
-            rear: "",
-            roof: "",
-          });
-          setDistanceSource("manual");
-          setStopRecoveryConfirmed(false);
-        }}
-      />
-
+      {appMode === "parking" ? (
+        <LidarReadinessCard
+          manualModeActive={true}
+          clearanceValues={clearanceValues}
+          distanceSource={distanceSource}
+          stopRecoveryConfirmed={stopRecoveryConfirmed}
+          onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
+          onApplyTestReading={(values) => {
+            setClearanceValues(values);
+            setDistanceSource("test-lidar");
+            setStopRecoveryConfirmed(false);
+          }}
+          onApplyRealLidarReading={(values) => {
+            setClearanceValues({
+              left: values.left,
+              right: values.right,
+              rear: values.rear,
+              roof: values.roof,
+            });
+            setDistanceSource("real-lidar");
+            setStopRecoveryConfirmed(false);
+          }}
+          onClearTestReading={() => {
+            setClearanceValues({
+              left: "",
+              right: "",
+              rear: "",
+              roof: "",
+            });
+            setDistanceSource("manual");
+            setStopRecoveryConfirmed(false);
+          }}
+        />
+      ) : null}
       <GuidanceCard
         currentStep={currentStep}
         stepIndex={safeStepIndex}
@@ -983,8 +1070,8 @@ export default function Index() {
         clearanceValues={clearanceValues}
         distanceSource={distanceSource}
         stopRecoveryConfirmed={stopRecoveryConfirmed}
+        appMode={appMode}
       />
-
       <AppFooterDisclaimer />
     </ScrollView>
   );

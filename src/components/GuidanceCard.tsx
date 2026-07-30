@@ -47,6 +47,7 @@ type Props = {
   clearanceValues: ClearanceValues;
   distanceSource: DistanceSource;
   stopRecoveryConfirmed: boolean;
+  appMode: "parking" | "practice";
 };
 
 export function GuidanceCard({
@@ -66,6 +67,7 @@ export function GuidanceCard({
   clearanceValues,
   distanceSource,
   stopRecoveryConfirmed,
+  appMode,
 }: Props) {
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [practiceAction, setPracticeAction] = useState<PracticeAction>("idle");
@@ -1108,11 +1110,14 @@ export function GuidanceCard({
           parkingType={parkingType}
         />
 
-        <PracticeModeControls
-          practiceAction={practiceAction}
-          onPracticeAction={handlePracticeAction}
-          onResetSimulation={resetSimulation}
-        />
+        {appMode === "practice" ? (
+          <PracticeModeControls
+            practiceAction={practiceAction}
+            onPracticeAction={handlePracticeAction}
+            onResetSimulation={resetSimulation}
+            backingSide={backingSide}
+          />
+        ) : null}
         {hasAnyClearanceValue ? (
           <DistanceWarningSummaryCard
             clearanceItems={clearanceItems}
