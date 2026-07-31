@@ -855,6 +855,17 @@ export function GuidanceCard({
           </Text>
         </View>
       ) : null}
+      <Text
+        style={{
+          marginTop: 8,
+          fontSize: 12,
+          fontWeight: "900",
+          color: "#dc2626",
+          textAlign: "center",
+        }}
+      >
+        DEBUG GuidanceCard appMode: {appMode}
+      </Text>
       {appMode === "practice" ? (
         <View
           style={{
@@ -1274,7 +1285,7 @@ export function GuidanceCard({
             </Text>
           </View>
         ) : null}
-        {showResumeBackingCoaching ? (
+        {appMode === "practice" && showResumeBackingCoaching ? (
           <View
             style={{
               marginTop: 10,
@@ -1333,79 +1344,6 @@ export function GuidanceCard({
                 to straight.
               </Text>
             </View>
-          </View>
-        ) : null}
-        {lastVoiceMessage ? (
-          <View
-            style={{
-              marginTop: 10,
-              padding: 10,
-              borderRadius: 12,
-              backgroundColor: "#f8fafc",
-              borderWidth: 1,
-              borderColor: "#cbd5e1",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "900",
-                color: "#334155",
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
-              Last Voice Coaching
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 5,
-                fontSize: 13,
-                fontWeight: "700",
-                color: "#0f172a",
-                lineHeight: 18,
-              }}
-            >
-              {lastVoiceMessage}
-            </Text>
-
-            <TouchableOpacity
-              onPress={repeatLastSafetyMessage}
-              style={{
-                marginTop: 10,
-                paddingVertical: 10,
-                paddingHorizontal: 10,
-                borderRadius: 12,
-                backgroundColor: "#0f172a",
-              }}
-            >
-              <Text
-                style={{
-                  color: "white",
-                  textAlign: "center",
-                  fontSize: 13,
-                  fontWeight: "900",
-                }}
-              >
-                🔁 Repeat Safety Coaching
-              </Text>
-            </TouchableOpacity>
-
-            <PracticeResultsSection
-              appMode={appMode}
-              stepIndex={stepIndex}
-              totalSteps={totalSteps}
-              steeringAngle={displaySteeringAngle}
-              truckAngle={simulatedTruckAngle}
-              trailerAngle={simulatedTrailerAngle}
-              scenario={scenario}
-              backingSide={backingSide}
-              sessionStats={sessionStats}
-              practiceSessions={practiceSessions}
-              restartPractice={restartPractice}
-              clearPracticeHistory={clearPracticeHistory}
-            />
           </View>
         ) : null}
         <PracticeResultsSection
