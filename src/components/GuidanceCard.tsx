@@ -14,8 +14,8 @@ import { DistanceWarningSummaryCard } from "./DistanceWarningSummaryCard";
 import { GetOutAndLookCard } from "./GetOutAndLookCard";
 import { ParkingDiagram } from "./ParkingDiagram";
 import { PracticeSession } from "./PracticeHistoryCard";
-
 import { PracticeAction, PracticeModeControls } from "./PracticeModeControls";
+import { PracticeResultsSection } from "./PracticeResultsSection";
 import { RecoveryCoachCard } from "./RecoveryCoachCard";
 import { SessionStats } from "./SessionStatsCard";
 import { SiteObstacle } from "./SiteObstacleSelector";
@@ -31,6 +31,7 @@ type SavedRigSettings = {
 };
 
 type Props = {
+  appMode: "parking" | "practice";
   currentStep: GuidanceStep;
   stepIndex: number;
   totalSteps: number;
@@ -47,7 +48,6 @@ type Props = {
   clearanceValues: ClearanceValues;
   distanceSource: DistanceSource;
   stopRecoveryConfirmed: boolean;
-  appMode: "parking" | "practice";
 };
 
 export function GuidanceCard({
@@ -895,9 +895,9 @@ export function GuidanceCard({
         </View>
       ) : null}
       <Text style={{ fontSize: 12, fontWeight: "bold", color: "#0e7490" }}>
-        STEP {stepIndex + 1} OF {totalSteps}
+        {appMode === "parking" ? "PARKING STEP" : "SIMULATOR STEP"}{" "}
+        {stepIndex + 1} OF {totalSteps}
       </Text>
-
       <View
         style={{
           marginTop: 12,
@@ -918,7 +918,6 @@ export function GuidanceCard({
           {steeringGuidance}
         </Text>
       </View>
-
       <View>
         <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
           <TouchableOpacity
@@ -1392,8 +1391,37 @@ export function GuidanceCard({
                 🔁 Repeat Safety Coaching
               </Text>
             </TouchableOpacity>
+
+            <PracticeResultsSection
+              appMode={appMode}
+              stepIndex={stepIndex}
+              totalSteps={totalSteps}
+              steeringAngle={displaySteeringAngle}
+              truckAngle={simulatedTruckAngle}
+              trailerAngle={simulatedTrailerAngle}
+              scenario={scenario}
+              backingSide={backingSide}
+              sessionStats={sessionStats}
+              practiceSessions={practiceSessions}
+              restartPractice={restartPractice}
+              clearPracticeHistory={clearPracticeHistory}
+            />
           </View>
         ) : null}
+        <PracticeResultsSection
+          appMode={appMode}
+          stepIndex={stepIndex}
+          totalSteps={totalSteps}
+          steeringAngle={displaySteeringAngle}
+          truckAngle={simulatedTruckAngle}
+          trailerAngle={simulatedTrailerAngle}
+          scenario={scenario}
+          backingSide={backingSide}
+          sessionStats={sessionStats}
+          practiceSessions={practiceSessions}
+          restartPractice={restartPractice}
+          clearPracticeHistory={clearPracticeHistory}
+        />
       </View>
     </View>
   );

@@ -910,6 +910,26 @@ export default function Index() {
         setAppMode={setAppMode}
       />
 
+      <GuidanceCard
+        currentStep={currentStep}
+        stepIndex={safeStepIndex}
+        totalSteps={steps.length}
+        backingSide={backingSide}
+        setBackingSide={setBackingSide}
+        goBack={goBack}
+        goNext={goNext}
+        restartPractice={restartPractice}
+        scenario={scenario}
+        setScenario={setScenario}
+        obstacles={obstacles}
+        campsiteType={campsiteType}
+        parkingType={parkingType}
+        clearanceValues={clearanceValues}
+        distanceSource={distanceSource}
+        stopRecoveryConfirmed={stopRecoveryConfirmed}
+        appMode={appMode}
+      />
+
       {appMode === "parking" ? (
         <BigNextActionCard
           stepIndex={safeStepIndex}
@@ -970,25 +990,7 @@ export default function Index() {
           }}
         />
       ) : null}
-      <GuidanceCard
-        currentStep={currentStep}
-        stepIndex={safeStepIndex}
-        totalSteps={steps.length}
-        backingSide={backingSide}
-        setBackingSide={setBackingSide}
-        goBack={goBack}
-        goNext={goNext}
-        restartPractice={restartPractice}
-        scenario={scenario}
-        setScenario={setScenario}
-        obstacles={obstacles}
-        campsiteType={campsiteType}
-        parkingType={parkingType}
-        clearanceValues={clearanceValues}
-        distanceSource={distanceSource}
-        stopRecoveryConfirmed={stopRecoveryConfirmed}
-        appMode={appMode}
-      />
+
       <AppFooterDisclaimer />
     </ScrollView>
   );

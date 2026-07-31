@@ -21,6 +21,7 @@ type Props = {
   practiceSessions: PracticeSession[];
   restartPractice: () => void;
   clearPracticeHistory: () => void;
+  appMode: "parking" | "practice";
 };
 
 export function PracticeResultsSection({
@@ -35,9 +36,14 @@ export function PracticeResultsSection({
   practiceSessions,
   restartPractice,
   clearPracticeHistory,
+  appMode,
 }: Props) {
   const isFinalStep = stepIndex === totalSteps - 1;
-  const [showResults, setShowResults] = useState(isFinalStep);
+  const [showResults, setShowResults] = useState(false);
+
+  if (appMode !== "practice") {
+    return null;
+  }
 
   return (
     <View
@@ -50,25 +56,27 @@ export function PracticeResultsSection({
         borderColor: "#cbd5e1",
       }}
     >
-      <TouchableOpacity
-        onPress={() => setShowResults((current) => !current)}
-        style={{
-          padding: 12,
-          borderRadius: 12,
-          backgroundColor: showResults ? "#334155" : "#0f172a",
-        }}
-      >
-        <Text
+      {appMode === "practice" ? (
+        <TouchableOpacity
+          onPress={() => setShowResults((current) => !current)}
           style={{
-            color: "white",
-            textAlign: "center",
-            fontSize: 14,
-            fontWeight: "900",
+            padding: 12,
+            borderRadius: 12,
+            backgroundColor: showResults ? "#334155" : "#0f172a",
           }}
         >
-          {showResults ? "Hide Practice Results" : "Show Practice Results"}
-        </Text>
-      </TouchableOpacity>
+          <Text
+            style={{
+              color: "white",
+              textAlign: "center",
+              fontSize: 14,
+              fontWeight: "900",
+            }}
+          >
+            {showResults ? "Hide Practice Results" : "Show Practice Results"}
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       {!showResults ? (
         <Text
@@ -86,7 +94,7 @@ export function PracticeResultsSection({
         </Text>
       ) : null}
 
-      {showResults ? (
+      {appMode === "practice" && showResults ? (
         <View style={{ marginTop: 12 }}>
           <SessionStatsCard stats={sessionStats} />
 
