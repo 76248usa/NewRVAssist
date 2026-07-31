@@ -797,7 +797,14 @@ export function GuidanceCard({
   }
   const showRecoveryCoach =
     jackknifeAutoStopActive || isRecoveringFromJackknife || recoveryComplete;
-
+  const shouldShowGetOutAndLook =
+    appMode === "practice" ||
+    stepIndex === totalSteps - 1 ||
+    obstacles.length > 0 ||
+    hasAnyClearanceValue ||
+    jackknifeAutoStopActive ||
+    isRecoveringFromJackknife ||
+    recoveryComplete;
   return (
     <View
       style={{
@@ -809,6 +816,45 @@ export function GuidanceCard({
         borderColor: "#67e8f9",
       }}
     >
+      {appMode === "parking" ? (
+        <View
+          style={{
+            marginBottom: 12,
+            padding: 12,
+            borderRadius: 14,
+            backgroundColor: "#ecfdf5",
+            borderWidth: 2,
+            borderColor: "#22c55e",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "900",
+              color: "#166534",
+              textAlign: "center",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            Parking Coach
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 5,
+              fontSize: 11,
+              fontWeight: "800",
+              color: "#166534",
+              textAlign: "center",
+              lineHeight: 16,
+            }}
+          >
+            Use Big Next Action, LiDAR distance, and Auto Stop while backing.
+            Always confirm visually and use a spotter.
+          </Text>
+        </View>
+      ) : null}
       {appMode === "practice" ? (
         <View
           style={{
@@ -1120,19 +1166,21 @@ export function GuidanceCard({
             backingSide={backingSide}
           />
         ) : null}
-        {hasAnyClearanceValue ? (
+        {appMode === "practice" && hasAnyClearanceValue ? (
           <DistanceWarningSummaryCard
             clearanceItems={clearanceItems}
             compact={true}
             showVoiceButton={false}
             distanceSource={distanceSource}
           />
+        ) : null}{" "}
+        {shouldShowGetOutAndLook ? (
+          <GetOutAndLookCard
+            parkingType={parkingType}
+            stepIndex={stepIndex}
+            obstacles={obstacles}
+          />
         ) : null}
-        <GetOutAndLookCard
-          parkingType={parkingType}
-          stepIndex={stepIndex}
-          obstacles={obstacles}
-        />
         {/* <SmartNextMoveCard
           stepIndex={stepIndex}
           backingSide={backingSide}
