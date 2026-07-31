@@ -899,174 +899,141 @@ export function GuidanceCard({
             </TouchableOpacity>
           )}
         </View>
+        {appMode === "practice" ? (
+          <>
+            <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+              {(["easy", "normal", "tight"] as const).map((item) => {
+                const selected = scenario === item;
 
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-          {(["left", "right"] as const).map((side) => {
-            const selected = backingSide === side;
+                return (
+                  <TouchableOpacity
+                    key={item}
+                    onPress={() => {
+                      setScenario(item);
+                      saveRigSettings({ backingSide, scenario: item });
+                      setMovementTrail([]);
+                      setIsRecoveringFromJackknife(false);
+                      resetSafetyFlags();
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: 10,
+                      borderRadius: 12,
+                      backgroundColor: selected ? "#7c3aed" : "white",
+                      borderWidth: 1,
+                      borderColor: selected ? "#7c3aed" : "#cbd5e1",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        fontWeight: "900",
+                        color: selected ? "white" : "#0f172a",
+                        fontSize: 12,
+                      }}
+                    >
+                      {item === "easy"
+                        ? "Easy"
+                        : item === "normal"
+                          ? "Normal"
+                          : "Tight"}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
 
-            return (
-              <TouchableOpacity
-                key={side}
-                onPress={() => {
-                  setBackingSide(side);
-                  saveRigSettings({ backingSide: side, scenario });
-                  setMovementTrail([]);
-                  setIsRecoveringFromJackknife(false);
-                  resetSafetyFlags();
-                }}
-                style={{
-                  flex: 1,
-                  padding: 12,
-                  borderRadius: 12,
-                  backgroundColor: selected ? "#0f172a" : "white",
-                  borderWidth: 1,
-                  borderColor: selected ? "#0f172a" : "#cbd5e1",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    fontWeight: "900",
-                    color: selected ? "white" : "#0f172a",
-                    fontSize: 12,
-                  }}
-                >
-                  {side === "left" ? "Left-side" : "Right-side"}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-          {(["easy", "normal", "tight"] as const).map((item) => {
-            const selected = scenario === item;
-
-            return (
-              <TouchableOpacity
-                key={item}
-                onPress={() => {
-                  setScenario(item);
-                  saveRigSettings({ backingSide, scenario: item });
-                  setMovementTrail([]);
-                  setIsRecoveringFromJackknife(false);
-                  resetSafetyFlags();
-                }}
-                style={{
-                  flex: 1,
-                  padding: 10,
-                  borderRadius: 12,
-                  backgroundColor: selected ? "#7c3aed" : "white",
-                  borderWidth: 1,
-                  borderColor: selected ? "#7c3aed" : "#cbd5e1",
-                }}
-              >
-                <Text
-                  style={{
-                    textAlign: "center",
-                    fontWeight: "900",
-                    color: selected ? "white" : "#0f172a",
-                    fontSize: 12,
-                  }}
-                >
-                  {item === "easy"
-                    ? "Easy"
-                    : item === "normal"
-                      ? "Normal"
-                      : "Tight"}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        <Text
-          style={{
-            marginTop: 8,
-            textAlign: "center",
-            color:
-              scenario === "tight"
-                ? "#dc2626"
-                : scenario === "easy"
-                  ? "#16a34a"
-                  : "#475569",
-            fontWeight: "800",
-            fontSize: 12,
-          }}
-        >
-          {scenario === "easy"
-            ? "Wide practice site — forgiving setup"
-            : scenario === "tight"
-              ? "Tight site — use smaller steering corrections"
-              : "Normal practice site"}
-        </Text>
-
-        <SteeringWheel
-          steeringAngle={displaySteeringAngle}
-          label={steeringLabel}
-        />
-
-        <CompactRigStatusRow
-          steeringAngle={displaySteeringAngle}
-          truckAngle={simulatedTruckAngle}
-          trailerAngle={simulatedTrailerAngle}
-          scenario={scenario}
-        />
-
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-          <TouchableOpacity
-            onPress={() => {
-              Speech.stop();
-              setVoiceEnabled((current) => !current);
-            }}
-            style={{
-              flex: 1,
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: voiceEnabled ? "#0f172a" : "#64748b",
-            }}
-          >
             <Text
               style={{
-                color: "white",
+                marginTop: 8,
                 textAlign: "center",
-                fontWeight: "900",
+                color:
+                  scenario === "tight"
+                    ? "#dc2626"
+                    : scenario === "easy"
+                      ? "#16a34a"
+                      : "#475569",
+                fontWeight: "800",
                 fontSize: 12,
               }}
             >
-              {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
+              {scenario === "easy"
+                ? "Wide practice site — forgiving setup"
+                : scenario === "tight"
+                  ? "Tight site — use smaller steering corrections"
+                  : "Normal practice site"}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              Speech.stop();
-              Speech.speak(voicePrompt, {
-                language: "en-US",
-                rate: 0.9,
-                pitch: 1.0,
-              });
-            }}
-            style={{
-              flex: 1,
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: "#0f172a",
-            }}
-          >
-            <Text
+          </>
+        ) : null}
+        {appMode === "practice" ? (
+          <SteeringWheel
+            steeringAngle={displaySteeringAngle}
+            label={steeringLabel}
+          />
+        ) : null}{" "}
+        {appMode === "practice" ? (
+          <CompactRigStatusRow
+            steeringAngle={displaySteeringAngle}
+            truckAngle={simulatedTruckAngle}
+            trailerAngle={simulatedTrailerAngle}
+            scenario={scenario}
+          />
+        ) : null}
+        {appMode === "practice" ? (
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <TouchableOpacity
+              onPress={() => {
+                Speech.stop();
+                setVoiceEnabled((current) => !current);
+              }}
               style={{
-                color: "white",
-                textAlign: "center",
-                fontWeight: "900",
-                fontSize: 12,
+                flex: 1,
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: voiceEnabled ? "#0f172a" : "#64748b",
               }}
             >
-              🔁 Repeat
-            </Text>
-          </TouchableOpacity>
-        </View>
+              <Text
+                style={{
+                  color: "white",
+                  textAlign: "center",
+                  fontWeight: "900",
+                  fontSize: 12,
+                }}
+              >
+                {voiceEnabled ? "🔊 Voice On" : "🔇 Voice Off"}
+              </Text>
+            </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => {
+                Speech.stop();
+                Speech.speak(voicePrompt, {
+                  language: "en-US",
+                  rate: 0.9,
+                  pitch: 1.0,
+                });
+              }}
+              style={{
+                flex: 1,
+                padding: 12,
+                borderRadius: 12,
+                backgroundColor: "#0f172a",
+              }}
+            >
+              <Text
+                style={{
+                  color: "white",
+                  textAlign: "center",
+                  fontWeight: "900",
+                  fontSize: 12,
+                }}
+              >
+                🔁 Repeat
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <Text
           style={{
             marginTop: 12,
@@ -1077,11 +1044,9 @@ export function GuidanceCard({
         >
           {currentStep.title}
         </Text>
-
         <Text style={{ marginTop: 10, fontSize: 12, lineHeight: 15 }}>
           {currentStep.instruction}
         </Text>
-
         {currentStep.warning ? (
           <View
             style={{
@@ -1098,7 +1063,6 @@ export function GuidanceCard({
             </Text>
           </View>
         ) : null}
-
         <ParkingDiagram
           stepIndex={stepIndex}
           backingSide={backingSide}
@@ -1109,7 +1073,6 @@ export function GuidanceCard({
           obstacles={obstacles}
           parkingType={parkingType}
         />
-
         {appMode === "practice" ? (
           <PracticeModeControls
             practiceAction={practiceAction}
@@ -1131,7 +1094,6 @@ export function GuidanceCard({
           stepIndex={stepIndex}
           obstacles={obstacles}
         />
-
         {/* <SmartNextMoveCard
           stepIndex={stepIndex}
           backingSide={backingSide}
@@ -1152,7 +1114,6 @@ export function GuidanceCard({
             campsiteType={campsiteType}
           />
         ) : null}
-
         {jackknifeAutoStopActive ? (
           <View
             style={{
@@ -1190,7 +1151,6 @@ export function GuidanceCard({
             </Text>
           </View>
         ) : null}
-
         {recoveryComplete ? (
           <View
             style={{
@@ -1228,7 +1188,6 @@ export function GuidanceCard({
             </Text>
           </View>
         ) : null}
-
         {showResumeBackingCoaching ? (
           <View
             style={{
@@ -1290,7 +1249,6 @@ export function GuidanceCard({
             </View>
           </View>
         ) : null}
-
         {lastVoiceMessage ? (
           <View
             style={{

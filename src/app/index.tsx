@@ -1007,18 +1007,22 @@ export default function Index() {
           distanceSource={distanceSource}
         />
       ) : null}
-      <ObstacleDistanceInputCard
-        parkingType={parkingType}
-        obstacles={obstacles}
-        clearanceValues={clearanceValues}
-        onChangeClearanceValues={(values) => {
-          setClearanceValues(values);
-          setDistanceSource("manual");
-        }}
-        distanceSource={distanceSource}
-        stopRecoveryConfirmed={stopRecoveryConfirmed}
-        onChangeStopRecoveryConfirmed={handleStopRecoveryConfirmedChange}
-      />
+
+      {appMode === "parking" ? (
+        <ObstacleDistanceInputCard
+          parkingType={parkingType}
+          obstacles={obstacles}
+          clearanceValues={clearanceValues}
+          onChangeClearanceValues={(values) => {
+            setClearanceValues(values);
+            setDistanceSource("manual");
+          }}
+          distanceSource={distanceSource}
+          stopRecoveryConfirmed={stopRecoveryConfirmed}
+          onChangeStopRecoveryConfirmed={setStopRecoveryConfirmed}
+        />
+      ) : null}
+
       {appMode === "parking" ? (
         <LidarReadinessCard
           manualModeActive={true}
