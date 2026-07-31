@@ -809,6 +809,45 @@ export function GuidanceCard({
         borderColor: "#67e8f9",
       }}
     >
+      {appMode === "practice" ? (
+        <View
+          style={{
+            marginBottom: 12,
+            padding: 12,
+            borderRadius: 14,
+            backgroundColor: "#f5f3ff",
+            borderWidth: 2,
+            borderColor: "#7c3aed",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "900",
+              color: "#5b21b6",
+              textAlign: "center",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            Practice Simulator
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 5,
+              fontSize: 11,
+              fontWeight: "800",
+              color: "#5b21b6",
+              textAlign: "center",
+              lineHeight: 16,
+            }}
+          >
+            Use these controls to learn steering, jackknife risk, and recovery.
+            Not for real backing movement.
+          </Text>
+        </View>
+      ) : null}
       <Text style={{ fontSize: 12, fontWeight: "bold", color: "#0e7490" }}>
         STEP {stepIndex + 1} OF {totalSteps}
       </Text>
