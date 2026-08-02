@@ -805,6 +805,21 @@ export function GuidanceCard({
     jackknifeAutoStopActive ||
     isRecoveringFromJackknife ||
     recoveryComplete;
+
+  const parkingTypeLabel =
+    parkingType === "pull-through" ? "Pull-through" : "Back-in";
+
+  const campsiteTypeLabel =
+    campsiteType === "straightBackIn"
+      ? "Straight back-in setup"
+      : campsiteType === "angledSite"
+        ? "Angled campsite setup"
+        : campsiteType === "tightCampgroundRoad"
+          ? "Tight campground road setup"
+          : campsiteType === "narrowDriveway"
+            ? "Narrow driveway setup"
+            : "Campsite setup";
+
   return (
     <View
       style={{
@@ -855,17 +870,7 @@ export function GuidanceCard({
           </Text>
         </View>
       ) : null}
-      <Text
-        style={{
-          marginTop: 8,
-          fontSize: 12,
-          fontWeight: "900",
-          color: "#dc2626",
-          textAlign: "center",
-        }}
-      >
-        DEBUG GuidanceCard appMode: {appMode}
-      </Text>
+
       {appMode === "practice" ? (
         <View
           style={{
@@ -905,10 +910,25 @@ export function GuidanceCard({
           </Text>
         </View>
       ) : null}
+
       <Text style={{ fontSize: 12, fontWeight: "bold", color: "#0e7490" }}>
         {appMode === "parking" ? "PARKING STEP" : "SIMULATOR STEP"}{" "}
         {stepIndex + 1} OF {totalSteps}
       </Text>
+
+      {/* {appMode === "parking" ? (
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 13,
+            fontWeight: "900",
+            color: "#334155",
+            textAlign: "center",
+          }}
+        >
+          {parkingTypeLabel}
+        </Text>
+      ) : null} */}
       <View
         style={{
           marginTop: 12,
@@ -1065,7 +1085,7 @@ export function GuidanceCard({
             steeringAngle={displaySteeringAngle}
             label={steeringLabel}
           />
-        ) : null}{" "}
+        ) : null}
         {appMode === "practice" ? (
           <CompactRigStatusRow
             steeringAngle={displaySteeringAngle}
@@ -1131,7 +1151,7 @@ export function GuidanceCard({
         ) : null}
         <Text
           style={{
-            marginTop: 12,
+            marginTop: 10,
             fontSize: 14,
             fontWeight: "bold",
             color: "#0f172a",
@@ -1145,7 +1165,7 @@ export function GuidanceCard({
         {currentStep.warning ? (
           <View
             style={{
-              marginTop: 12,
+              marginTop: 6,
               padding: 12,
               borderRadius: 12,
               backgroundColor: "#fff7ed",
@@ -1153,7 +1173,9 @@ export function GuidanceCard({
               borderColor: "#fed7aa",
             }}
           >
-            <Text style={{ color: "#9a3412", fontWeight: "bold" }}>
+            <Text
+              style={{ color: "#9a3412", fontWeight: "bold", fontSize: 10 }}
+            >
               ⚠️ {currentStep.warning}
             </Text>
           </View>

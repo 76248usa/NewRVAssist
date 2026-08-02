@@ -69,6 +69,10 @@ function getCampsiteTypeLabel(campsiteType: CampsiteType) {
   return "Straight back-in";
 }
 
+function getBackingSideLabel(side: "left" | "right") {
+  return side === "left" ? "Driver side backing" : "Passenger side backing";
+}
+
 function getObstacleLabel(obstacle: SiteObstacle) {
   if (obstacle === "poleRight") return "Pole right";
   if (obstacle === "treeLeft") return "Tree left";
@@ -82,6 +86,7 @@ type CompactSetupSummaryCardProps = {
   trailerLength: string;
   totalLength: number;
   backingSide: "left" | "right";
+  setBackingSide: (side: "left" | "right") => void;
   scenario: "easy" | "normal" | "tight";
   parkingType: ParkingType;
   selectParkingType: (type: ParkingType) => void;
@@ -97,6 +102,7 @@ function CompactSetupSummaryCard({
   trailerLength,
   totalLength,
   backingSide,
+  setBackingSide,
   scenario,
   parkingType,
   selectParkingType,
@@ -153,9 +159,11 @@ function CompactSetupSummaryCard({
               lineHeight: 16,
             }}
           >
-            {`${getParkingTypeLabel(parkingType)} • ${getCampsiteTypeLabel(
-              campsiteType,
-            )} • ${totalLength} ft`}
+            {`${getParkingTypeLabel(parkingType)} • ${
+              parkingType === "back-in"
+                ? `${getCampsiteTypeLabel(campsiteType)} • `
+                : ""
+            }${getBackingSideLabel(backingSide)} • ${totalLength} ft`}
           </Text>
         </View>
 
@@ -207,7 +215,7 @@ function CompactSetupSummaryCard({
             lineHeight: 16,
           }}
         >
-          Backing side: {backingSide === "left" ? "Left" : "Right"} • Scenario:{" "}
+          Backing side: {getBackingSideLabel(backingSide)} • Scenario:{" "}
           {scenario}
         </Text>
 
@@ -257,6 +265,62 @@ function CompactSetupSummaryCard({
               campsiteType={campsiteType}
               setCampsiteType={setCampsiteType}
             />
+          ) : null}
+
+          {parkingType === "back-in" ? (
+            <View style={{ marginTop: 12 }}>
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "900",
+                  color: "#334155",
+                  marginBottom: 8,
+                }}
+              >
+                Backing Side
+              </Text>
+
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                {(["left", "right"] as const).map((side) => (
+                  <TouchableOpacity
+                    key={side}
+                    onPress={() => setBackingSide(side)}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 12,
+                      borderWidth: 2,
+                      borderColor: backingSide === side ? "#0f766e" : "#cbd5e1",
+                      backgroundColor:
+                        backingSide === side ? "#ccfbf1" : "white",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        textAlign: "center",
+                        fontSize: 13,
+                        fontWeight: "900",
+                        color: backingSide === side ? "#115e59" : "#334155",
+                      }}
+                    >
+                      {side === "left" ? "Driver side" : "Passenger side"}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: "#64748b",
+                  lineHeight: 17,
+                }}
+              >
+                Choose which side the trailer will enter from while backing.
+              </Text>
+            </View>
           ) : null}
 
           <SiteObstacleSelector
@@ -333,7 +397,13 @@ function getRearStatusText(
       : "No rear distance entered yet.";
   }
 
-  return `Rear clearance: ${rear} inches from ${distanceSource === "real-lidar" ? "Real LiDAR" : distanceSource === "test-lidar" ? "Test LiDAR" : "Manual Backup"}.`;
+  return `Rear clearance: ${rear} inches from ${
+    distanceSource === "real-lidar"
+      ? "Real LiDAR"
+      : distanceSource === "test-lidar"
+        ? "Test LiDAR"
+        : "Manual Backup"
+  }.`;
 }
 
 function BigNextActionCard({
@@ -366,13 +436,13 @@ function BigNextActionCard({
     ? "#fee2e2"
     : isCautionOverride
       ? "#fef3c7"
-      : "#ecfdf5";
+      : "#f0fdf4";
 
   const cardBorderColor = isStopOverride
     ? "#dc2626"
     : isCautionOverride
       ? "#f59e0b"
-      : "#22c55e";
+      : "#bbf7d0";
 
   const titleColor = isStopOverride
     ? "#991b1b"
@@ -411,21 +481,21 @@ function BigNextActionCard({
   return (
     <View
       style={{
-        marginTop: 14,
-        padding: 14,
-        borderRadius: 16,
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 14,
         backgroundColor: cardBackgroundColor,
-        borderWidth: 2,
+        borderWidth: 1,
         borderColor: cardBorderColor,
       }}
     >
       <Text
         style={{
-          fontSize: 12,
-          fontWeight: "900",
+          fontSize: 11,
+          fontWeight: "800",
           color: titleColor,
           textTransform: "uppercase",
-          letterSpacing: 0.5,
+          letterSpacing: 0.4,
           textAlign: "center",
         }}
       >
@@ -434,11 +504,11 @@ function BigNextActionCard({
 
       <Text
         style={{
-          marginTop: 8,
-          fontSize: isStopOverride ? 22 : 15,
-          fontWeight: "900",
+          marginTop: 6,
+          fontSize: isStopOverride ? 20 : 14,
+          fontWeight: isStopOverride ? "900" : "700",
           color: isStopOverride ? "#991b1b" : "#0f172a",
-          lineHeight: isStopOverride ? 28 : 21,
+          lineHeight: isStopOverride ? 25 : 19,
           textAlign: "center",
         }}
       >
@@ -447,21 +517,21 @@ function BigNextActionCard({
 
       <View
         style={{
-          marginTop: 12,
-          padding: 10,
-          borderRadius: 12,
+          marginTop: 10,
+          padding: 9,
+          borderRadius: 10,
           backgroundColor: "white",
           borderWidth: 1,
-          borderColor: cardBorderColor,
+          borderColor: "#e2e8f0",
         }}
       >
         <Text
           style={{
-            fontSize: 11,
-            fontWeight: "900",
+            fontSize: 10,
+            fontWeight: "800",
             color: titleColor,
             textTransform: "uppercase",
-            letterSpacing: 0.4,
+            letterSpacing: 0.3,
           }}
         >
           Watch
@@ -469,11 +539,11 @@ function BigNextActionCard({
 
         <Text
           style={{
-            marginTop: 4,
-            fontSize: 12,
-            fontWeight: "800",
-            color: "#0f172a",
-            lineHeight: 17,
+            marginTop: 3,
+            fontSize: 11,
+            fontWeight: "600",
+            color: "#334155",
+            lineHeight: 16,
           }}
         >
           {watchOverrideText}
@@ -483,20 +553,20 @@ function BigNextActionCard({
       <View
         style={{
           marginTop: 8,
-          padding: 10,
-          borderRadius: 12,
+          padding: 9,
+          borderRadius: 10,
           backgroundColor: "white",
           borderWidth: 1,
-          borderColor: cardBorderColor,
+          borderColor: "#e2e8f0",
         }}
       >
         <Text
           style={{
-            fontSize: 11,
-            fontWeight: "900",
+            fontSize: 10,
+            fontWeight: "800",
             color: titleColor,
             textTransform: "uppercase",
-            letterSpacing: 0.4,
+            letterSpacing: 0.3,
           }}
         >
           Stop If
@@ -504,11 +574,11 @@ function BigNextActionCard({
 
         <Text
           style={{
-            marginTop: 4,
-            fontSize: 12,
-            fontWeight: "800",
-            color: "#0f172a",
-            lineHeight: 17,
+            marginTop: 3,
+            fontSize: 11,
+            fontWeight: "600",
+            color: "#334155",
+            lineHeight: 16,
           }}
         >
           {stopIfText}
@@ -517,12 +587,12 @@ function BigNextActionCard({
 
       <Text
         style={{
-          marginTop: 10,
-          fontSize: 11,
-          fontWeight: "800",
+          marginTop: 8,
+          fontSize: 10,
+          fontWeight: "600",
           color: titleColor,
           textAlign: "center",
-          lineHeight: 16,
+          lineHeight: 14,
         }}
       >
         {statusLine}
@@ -530,12 +600,14 @@ function BigNextActionCard({
     </View>
   );
 }
+
 export default function Index() {
   const [truckLength, setTruckLength] = useState("20");
   const [trailerLength, setTrailerLength] = useState("30");
   const CAMPSITE_TYPE_STORAGE_KEY = "rvAssist.campsiteType";
   const OBSTACLES_STORAGE_KEY = "rvAssist.obstacles";
   const PARKING_TYPE_STORAGE_KEY = "rvAssist.parkingType";
+
   const [draftTruckLength, setDraftTruckLength] = useState("20");
   const [draftTrailerLength, setDraftTrailerLength] = useState("30");
 
@@ -562,6 +634,18 @@ export default function Index() {
   const currentStep = steps[safeStepIndex];
 
   const obstacleWarnings = getObstacleWarning(obstacles);
+
+  const [clearanceValues, setClearanceValues] = useState<ClearanceValues>({
+    left: "",
+    right: "",
+    rear: "",
+    roof: "",
+  });
+
+  const [distanceSource, setDistanceSource] =
+    useState<DistanceSource>("manual");
+
+  const [stopRecoveryConfirmed, setStopRecoveryConfirmed] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -617,21 +701,6 @@ export default function Index() {
 
     loadSavedCampsiteType();
   }, []);
-
-  const [clearanceValues, setClearanceValues] = useState<ClearanceValues>({
-    left: "",
-    right: "",
-    rear: "",
-    roof: "",
-  });
-
-  const [distanceSource, setDistanceSource] =
-    useState<DistanceSource>("manual");
-
-  const [stopRecoveryConfirmed, setStopRecoveryConfirmed] = useState(false);
-  const handleStopRecoveryConfirmedChange = (value: boolean) => {
-    setStopRecoveryConfirmed(value);
-  };
 
   useEffect(() => {
     async function loadSavedObstacles() {
@@ -796,6 +865,7 @@ export default function Index() {
       <AppHeaderCard totalLength={headerTotalLength} />
       <HowToUseCard />
       <SafetyDisclaimerCard />
+
       {isEditingRigSetup ? (
         <>
           <RigSetupCard
@@ -854,6 +924,7 @@ export default function Index() {
           trailerLength={trailerLength}
           totalLength={totalLength}
           backingSide={backingSide}
+          setBackingSide={setBackingSide}
           scenario={scenario}
           parkingType={parkingType}
           selectParkingType={selectParkingType}
@@ -864,6 +935,7 @@ export default function Index() {
           onEditRigSetup={startEditingRigSetup}
         />
       )}
+
       {obstacleWarnings.length > 0 ? (
         <View
           style={{
@@ -900,6 +972,7 @@ export default function Index() {
           </Text>
         </View>
       ) : null}
+
       <CurrentCoachModeCard
         parkingType={parkingType}
         backingSide={backingSide}
