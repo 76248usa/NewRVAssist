@@ -9,29 +9,33 @@ export function SafetyDisclaimerCard() {
       style={{
         marginTop: 12,
         padding: 12,
-        borderRadius: 16,
-        backgroundColor: "#fff7ed",
+        borderRadius: 14,
+        backgroundColor: "#fffaf5",
         borderWidth: 1,
         borderColor: "#fed7aa",
       }}
     >
       <TouchableOpacity
         onPress={() => setIsExpanded((current) => !current)}
+        activeOpacity={0.8}
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: 10,
         }}
       >
-        <View style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            marginRight: 12,
+          }}
+        >
           <Text
             style={{
               fontSize: 12,
-              fontWeight: "900",
+              fontWeight: "700",
               color: "#9a3412",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
+              letterSpacing: 0.2,
             }}
           >
             Safety Reminder
@@ -39,42 +43,80 @@ export function SafetyDisclaimerCard() {
 
           <Text
             style={{
-              marginTop: 4,
-              fontSize: 13,
-              fontWeight: "800",
+              marginTop: 3,
+              fontSize: 12,
+              fontWeight: "500",
               color: "#7c2d12",
+              lineHeight: 17,
             }}
           >
-            Training aid only — tap for details
+            Training aid only. Always confirm your surroundings.
           </Text>
         </View>
 
-        <Text
+        <View
           style={{
-            fontSize: 20,
-            fontWeight: "900",
-            color: "#9a3412",
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#ffedd5",
+            borderWidth: 1,
+            borderColor: "#fdba74",
           }}
         >
-          {isExpanded ? "−" : "+"}
-        </Text>
+          <Text
+            allowFontScaling={false}
+            style={{
+              fontSize: 18,
+              fontWeight: "600",
+              color: "#9a3412",
+              textAlign: "center",
+              lineHeight: 18,
+              includeFontPadding: false,
+              transform: [{ translateY: -1 }],
+            }}
+          >
+            {isExpanded ? "−" : "+"}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {isExpanded ? (
-        <Text
+        <View
           style={{
             marginTop: 10,
-            fontSize: 13,
-            fontWeight: "800",
-            color: "#7c2d12",
-            lineHeight: 19,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: "#fed7aa",
           }}
         >
-          RV Assist is a training aid only. Always use your mirrors, backup
-          camera, spotter, and direct visual checks when backing an RV. Stop
-          immediately if you are unsure about clearance, trailer angle, people,
-          pets, or obstacles.
-        </Text>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "400",
+              color: "#7c2d12",
+              lineHeight: 18,
+            }}
+          >
+            RV Assist is a training aid only. Always use your mirrors, backup
+            camera, spotter, and direct visual checks when backing an RV.
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 7,
+              fontSize: 12,
+              fontWeight: "600",
+              color: "#9a3412",
+              lineHeight: 18,
+            }}
+          >
+            Stop immediately if you are unsure about clearance, trailer angle,
+            people, pets, or obstacles.
+          </Text>
+        </View>
       ) : null}
     </View>
   );

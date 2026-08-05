@@ -23,13 +23,13 @@ const OBSTACLE_OPTIONS: ObstacleOption[] = [
   {
     id: "treeLeft",
     title: "Tree left",
-    subtitle: "Watch left mirror",
+    subtitle: "Watch the left mirror",
     emoji: "🌳",
   },
   {
     id: "poleRight",
     title: "Pole right",
-    subtitle: "Watch right mirror",
+    subtitle: "Watch the right mirror",
     emoji: "🚧",
   },
   {
@@ -63,14 +63,14 @@ function getSelectedObstacleLabels(obstacles: SiteObstacle[]) {
 
 function getObstacleCoaching(obstacles: SiteObstacle[]) {
   if (obstacles.length === 0) {
-    return "No specific obstacles selected. Still check mirrors, roof clearance, rear clearance, and both sides before backing.";
+    return "No specific obstacles selected. Still check both mirrors, the roof, the rear of the trailer, and both sides before backing.";
   }
 
   const coaching: string[] = [];
 
   if (obstacles.includes("poleRight")) {
     coaching.push(
-      "Keep extra clearance on the right side and check the right mirror often.",
+      "Keep extra clearance on the right and check the right mirror often.",
     );
   }
 
@@ -85,7 +85,7 @@ function getObstacleCoaching(obstacles: SiteObstacle[]) {
   }
 
   if (obstacles.includes("tightHookupSide")) {
-    coaching.push("Leave room for hookups, slides, and walking space.");
+    coaching.push("Leave enough room for hookups, slides, and walking space.");
   }
 
   return coaching.join(" ");
@@ -116,232 +116,333 @@ export function SiteObstacleSelector({ obstacles, setObstacles }: Props) {
     <View
       style={{
         marginTop: 12,
-        borderRadius: 16,
+        borderRadius: 14,
         backgroundColor: "#f8fafc",
         borderWidth: 1,
-        borderColor: "#cbd5e1",
+        borderColor: "#dbe3ef",
         overflow: "hidden",
       }}
     >
       <TouchableOpacity
         onPress={() => setExpanded((current) => !current)}
-        activeOpacity={0.85}
+        activeOpacity={0.82}
         style={{
-          padding: 14,
-          backgroundColor: "#f8fafc",
+          padding: 12,
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            gap: 10,
-            alignItems: "center",
+            flex: 1,
+            marginRight: 12,
           }}
         >
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "900",
-                color: "#334155",
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
-              Site Obstacles
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 6,
-                fontSize: 15,
-                fontWeight: "900",
-                color: "#0f172a",
-                lineHeight: 20,
-              }}
-            >
-              {obstacles.length === 0
-                ? "No obstacles selected"
-                : `${obstacles.length} selected`}
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 4,
-                fontSize: 12,
-                fontWeight: "700",
-                color: "#64748b",
-                lineHeight: 17,
-              }}
-            >
-              {selectedLabels}
-            </Text>
-          </View>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "700",
+              color: "#334155",
+              letterSpacing: 0.2,
+            }}
+          >
+            Site obstacles
+          </Text>
 
           <Text
             style={{
-              fontSize: 18,
-              fontWeight: "900",
-              color: "#334155",
+              marginTop: 4,
+              fontSize: 13,
+              fontWeight: "600",
+              color: "#0f172a",
+              lineHeight: 18,
             }}
           >
-            {expanded ? "⌃" : "⌄"}
+            {obstacles.length === 0
+              ? "No obstacles selected"
+              : `${obstacles.length} ${
+                  obstacles.length === 1 ? "obstacle" : "obstacles"
+                } selected`}
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 3,
+              fontSize: 11,
+              fontWeight: "400",
+              color: obstacles.length > 0 ? "#92400e" : "#64748b",
+              lineHeight: 16,
+            }}
+          >
+            {selectedLabels}
           </Text>
         </View>
 
-        <Text
+        <View
           style={{
-            marginTop: 6,
-            fontSize: 11,
-            fontWeight: "800",
-            color: "#64748b",
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: expanded ? "#ffedd5" : "#eef2f7",
+            borderWidth: 1,
+            borderColor: expanded ? "#fdba74" : "#cbd5e1",
           }}
         >
-          {expanded ? "Tap to hide choices" : "Tap to change"}
-        </Text>
+          <Text
+            allowFontScaling={false}
+            style={{
+              fontSize: 18,
+              fontWeight: "600",
+              color: expanded ? "#9a3412" : "#475569",
+              textAlign: "center",
+              lineHeight: 18,
+              includeFontPadding: false,
+              transform: [{ translateY: -1 }],
+            }}
+          >
+            {expanded ? "−" : "+"}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {expanded ? (
         <View
           style={{
-            padding: 14,
-            paddingTop: 0,
+            paddingHorizontal: 12,
+            paddingBottom: 12,
           }}
         >
-          <Text
-            style={{
-              marginTop: 4,
-              fontSize: 14,
-              fontWeight: "800",
-              color: "#0f172a",
-              lineHeight: 19,
-            }}
-          >
-            Select anything near the campsite that could affect your backing
-            path.
-          </Text>
-
           <View
             style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              gap: 8,
-              marginTop: 12,
+              paddingTop: 10,
+              borderTopWidth: 1,
+              borderTopColor: "#e2e8f0",
             }}
           >
-            {OBSTACLE_OPTIONS.map((option) => {
-              const selected = obstacles.includes(option.id);
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "400",
+                color: "#64748b",
+                lineHeight: 16,
+              }}
+            >
+              Select anything near the site that could affect the backing path.
+              More than one obstacle may be selected.
+            </Text>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 8,
+                marginTop: 10,
+              }}
+            >
+              {OBSTACLE_OPTIONS.map((option) => {
+                const selected = obstacles.includes(option.id);
 
-              return (
-                <TouchableOpacity
-                  key={option.id}
-                  onPress={() => toggleObstacle(option.id)}
+                return (
+                  <TouchableOpacity
+                    key={option.id}
+                    onPress={() => toggleObstacle(option.id)}
+                    activeOpacity={0.82}
+                    style={{
+                      width: "48%",
+                      minHeight: 104,
+                      paddingVertical: 10,
+                      paddingHorizontal: 8,
+                      borderRadius: 12,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: selected ? "#fff7ed" : "#ffffff",
+                      borderWidth: selected ? 2 : 1,
+                      borderColor: selected ? "#c2410c" : "#dbe3ef",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 19,
+                      }}
+                    >
+                      {option.emoji}
+                    </Text>
+
+                    <Text
+                      style={{
+                        marginTop: 4,
+                        textAlign: "center",
+                        fontSize: 12,
+                        fontWeight: selected ? "700" : "600",
+                        color: selected ? "#9a3412" : "#334155",
+                        lineHeight: 16,
+                      }}
+                    >
+                      {option.title}
+                    </Text>
+
+                    <Text
+                      style={{
+                        marginTop: 3,
+                        textAlign: "center",
+                        fontSize: 10,
+                        fontWeight: "400",
+                        color: selected ? "#c2410c" : "#64748b",
+                        lineHeight: 14,
+                      }}
+                    >
+                      {option.subtitle}
+                    </Text>
+
+                    {selected ? (
+                      <View
+                        style={{
+                          marginTop: 6,
+                          paddingVertical: 2,
+                          paddingHorizontal: 7,
+                          borderRadius: 999,
+                          backgroundColor: "#ffedd5",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontSize: 9,
+                            fontWeight: "600",
+                            color: "#9a3412",
+                          }}
+                        >
+                          Selected
+                        </Text>
+                      </View>
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            {obstacles.length > 0 ? (
+              <TouchableOpacity
+                onPress={clearObstacles}
+                activeOpacity={0.82}
+                style={{
+                  marginTop: 10,
+                  padding: 10,
+                  borderRadius: 11,
+                  backgroundColor: "#ffffff",
+                  borderWidth: 1,
+                  borderColor: "#fecaca",
+                }}
+              >
+                <Text
                   style={{
-                    width: "48%",
-                    padding: 10,
-                    borderRadius: 14,
-                    backgroundColor: selected ? "#92400e" : "white",
-                    borderWidth: 1,
-                    borderColor: selected ? "#92400e" : "#cbd5e1",
+                    color: "#b91c1c",
+                    textAlign: "center",
+                    fontSize: 11,
+                    fontWeight: "400",
+                  }}
+                >
+                  Clear selected obstacles
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
+            <View
+              style={{
+                marginTop: 10,
+                padding: 11,
+                borderRadius: 12,
+                backgroundColor: obstacles.length > 0 ? "#fffaf5" : "#f8fafc",
+                borderWidth: 1,
+                borderColor: obstacles.length > 0 ? "#fed7aa" : "#e2e8f0",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <View
+                  style={{
+                    width: 24,
+                    height: 24,
+                    marginRight: 8,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor:
+                      obstacles.length > 0 ? "#ffedd5" : "#eef2f7",
                   }}
                 >
                   <Text
+                    allowFontScaling={false}
                     style={{
-                      fontSize: 20,
-                      textAlign: "center",
+                      fontSize: 12,
+                      lineHeight: 14,
+                      includeFontPadding: false,
                     }}
                   >
-                    {option.emoji}
+                    {obstacles.length > 0 ? "⚠️" : "✓"}
                   </Text>
+                </View>
 
+                <View style={{ flex: 1 }}>
                   <Text
                     style={{
-                      marginTop: 4,
-                      textAlign: "center",
-                      fontSize: 12,
-                      fontWeight: "900",
-                      color: selected ? "white" : "#0f172a",
+                      fontSize: 11,
+                      fontWeight: "500",
+                      color: obstacles.length > 0 ? "#9a3412" : "#475569",
+                      letterSpacing: 0.1,
                     }}
                   >
-                    {option.title}
+                    {obstacles.length > 0
+                      ? "Obstacle coaching"
+                      : "General clearance reminder"}
                   </Text>
-
                   <Text
                     style={{
                       marginTop: 3,
-                      textAlign: "center",
                       fontSize: 10,
-                      fontWeight: "700",
-                      color: selected ? "#fde68a" : "#64748b",
+                      fontWeight: "400",
+                      color: obstacles.length > 0 ? "#c2410c" : "#64748b",
                       lineHeight: 14,
                     }}
                   >
-                    {option.subtitle}
+                    {obstacles.length > 0
+                      ? `${obstacles.length} ${
+                          obstacles.length === 1 ? "obstacle" : "obstacles"
+                        } selected`
+                      : "No specific obstacles selected"}
                   </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                </View>
+              </View>
 
-          {obstacles.length > 0 ? (
-            <TouchableOpacity
-              onPress={clearObstacles}
-              style={{
-                marginTop: 10,
-                padding: 10,
-                borderRadius: 12,
-                backgroundColor: "#fee2e2",
-                borderWidth: 1,
-                borderColor: "#fecaca",
-              }}
-            >
               <Text
                 style={{
-                  color: "#991b1b",
-                  textAlign: "center",
+                  marginTop: 8,
                   fontSize: 12,
-                  fontWeight: "900",
+                  fontWeight: "400",
+                  color: obstacles.length > 0 ? "#7c2d12" : "#475569",
+                  lineHeight: 18,
                 }}
               >
-                Clear selected obstacles
+                {obstacleCoaching}
               </Text>
-            </TouchableOpacity>
-          ) : null}
 
-          <View
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 14,
-              backgroundColor: "#fff7ed",
-              borderWidth: 1,
-              borderColor: "#fed7aa",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "900",
-                color: "#c2410c",
-                textTransform: "uppercase",
-                letterSpacing: 0.4,
-              }}
-            >
-              Obstacle Coaching
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 6,
-                fontSize: 13,
-                fontWeight: "800",
-                color: "#0f172a",
-                lineHeight: 18,
-              }}
-            >
-              {obstacleCoaching}
-            </Text>
+              {obstacles.length > 0 ? (
+                <Text
+                  style={{
+                    marginTop: 7,
+                    fontSize: 11,
+                    fontWeight: "400",
+                    color: "#9a3412",
+                    lineHeight: 16,
+                  }}
+                >
+                  Stop and get out to look whenever clearance is uncertain.
+                </Text>
+              ) : null}
+            </View>
           </View>
         </View>
       ) : null}

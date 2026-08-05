@@ -826,48 +826,92 @@ export function GuidanceCard({
         marginTop: 18,
         padding: 16,
         borderRadius: 16,
-        backgroundColor: "#ecfeff",
+        backgroundColor: appMode === "parking" ? "#f8fafc" : "#ecfeff",
         borderWidth: 1,
-        borderColor: "#67e8f9",
+        borderColor: appMode === "parking" ? "#dbe3ef" : "#67e8f9",
       }}
     >
       {appMode === "parking" ? (
         <View
           style={{
             marginBottom: 12,
-            padding: 12,
+            padding: 11,
             borderRadius: 14,
-            backgroundColor: "#ecfdf5",
-            borderWidth: 2,
-            borderColor: "#22c55e",
+            backgroundColor: "#f0fdf4",
+            borderWidth: 1,
+            borderColor: "#bbf7d0",
           }}
         >
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: "900",
-              color: "#166534",
-              textAlign: "center",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-            }}
-          >
-            Parking Coach
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                marginRight: 9,
+                borderRadius: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: "#dcfce7",
+              }}
+            >
+              <Text
+                allowFontScaling={false}
+                style={{
+                  fontSize: 14,
+                  lineHeight: 16,
+                  includeFontPadding: false,
+                }}
+              >
+                🚐
+              </Text>
+            </View>
 
-          <Text
-            style={{
-              marginTop: 5,
-              fontSize: 11,
-              fontWeight: "800",
-              color: "#166534",
-              textAlign: "center",
-              lineHeight: 16,
-            }}
-          >
-            Use Big Next Action, LiDAR distance, and Auto Stop while backing.
-            Always confirm visually and use a spotter.
-          </Text>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "600",
+                  color: "#166534",
+                }}
+              >
+                Parking Coach
+              </Text>
+
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 10,
+                  fontWeight: "400",
+                  color: "#3f6212",
+                  lineHeight: 15,
+                }}
+              >
+                Confirm each move with mirrors, direct visual checks, and a
+                spotter when available.
+              </Text>
+            </View>
+
+            <View
+              style={{
+                paddingVertical: 3,
+                paddingHorizontal: 8,
+                borderRadius: 999,
+                backgroundColor: "#dcfce7",
+                borderWidth: 1,
+                borderColor: "#86efac",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 9,
+                  fontWeight: "500",
+                  color: "#166534",
+                }}
+              >
+                Active
+              </Text>
+            </View>
+          </View>
         </View>
       ) : null}
 
@@ -878,18 +922,17 @@ export function GuidanceCard({
             padding: 12,
             borderRadius: 14,
             backgroundColor: "#f5f3ff",
-            borderWidth: 2,
-            borderColor: "#7c3aed",
+            borderWidth: 1,
+            borderColor: "#c4b5fd",
           }}
         >
           <Text
             style={{
               fontSize: 12,
-              fontWeight: "900",
+              fontWeight: "700",
               color: "#5b21b6",
               textAlign: "center",
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
+              letterSpacing: 0.2,
             }}
           >
             Practice Simulator
@@ -899,10 +942,10 @@ export function GuidanceCard({
             style={{
               marginTop: 5,
               fontSize: 11,
-              fontWeight: "800",
-              color: "#5b21b6",
+              fontWeight: "500",
+              color: "#6d28d9",
               textAlign: "center",
-              lineHeight: 16,
+              lineHeight: 17,
             }}
           >
             Use these controls to learn steering, jackknife risk, and recovery.
@@ -911,60 +954,145 @@ export function GuidanceCard({
         </View>
       ) : null}
 
-      <Text style={{ fontSize: 12, fontWeight: "bold", color: "#0e7490" }}>
-        {appMode === "parking" ? "PARKING STEP" : "SIMULATOR STEP"}{" "}
-        {stepIndex + 1} OF {totalSteps}
-      </Text>
-
-      {/* {appMode === "parking" ? (
-        <Text
-          style={{
-            marginTop: 4,
-            fontSize: 13,
-            fontWeight: "900",
-            color: "#334155",
-            textAlign: "center",
-          }}
-        >
-          {parkingTypeLabel}
-        </Text>
-      ) : null} */}
       <View
         style={{
-          marginTop: 12,
-          backgroundColor: bannerColor,
-          borderRadius: 14,
-          paddingVertical: 14,
-          paddingHorizontal: 10,
+          padding: appMode === "parking" ? 12 : 0,
+          borderRadius: appMode === "parking" ? 14 : 0,
+          backgroundColor: appMode === "parking" ? "#ffffff" : "transparent",
+          borderWidth: appMode === "parking" ? 1 : 0,
+          borderColor: appMode === "parking" ? "#e2e8f0" : "transparent",
         }}
       >
-        <Text
+        <View
           style={{
-            color: "white",
-            textAlign: "center",
-            fontSize: 16,
-            fontWeight: "900",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          {steeringGuidance}
+          <Text
+            style={{
+              fontSize: 10,
+              fontWeight: "500",
+              color: "#64748b",
+              letterSpacing: 0.2,
+            }}
+          >
+            {appMode === "parking" ? "Parking step" : "Simulator step"}{" "}
+            {stepIndex + 1} of {totalSteps}
+          </Text>
+
+          {appMode === "parking" ? (
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "400",
+                color: "#64748b",
+              }}
+            >
+              {parkingTypeLabel}
+            </Text>
+          ) : null}
+        </View>
+
+        <View
+          style={{
+            marginTop: 9,
+            backgroundColor: bannerColor,
+            borderRadius: 13,
+            paddingVertical: 13,
+            paddingHorizontal: 10,
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              textAlign: "center",
+              fontSize: steeringGuidance === "🛑 STOP" ? 18 : 16,
+              fontWeight: steeringGuidance === "🛑 STOP" ? "800" : "700",
+              letterSpacing: 0.2,
+            }}
+          >
+            {steeringGuidance}
+          </Text>
+        </View>
+
+        <Text
+          style={{
+            marginTop: 11,
+            fontSize: 12,
+            fontWeight: "600",
+            color: "#0f172a",
+            lineHeight: 20,
+          }}
+        >
+          {currentStep.title}
         </Text>
-      </View>
-      <View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+
+        <Text
+          style={{
+            marginTop: 5,
+            fontSize: 12,
+            lineHeight: 15,
+            color: "#475569",
+            fontWeight: "400",
+          }}
+        >
+          {currentStep.instruction}
+        </Text>
+
+        {currentStep.warning ? (
+          <View
+            style={{
+              marginTop: 9,
+              padding: 10,
+              borderRadius: 11,
+              backgroundColor: "#fffaf5",
+              borderWidth: 1,
+              borderColor: "#fed7aa",
+              flexDirection: "row",
+              alignItems: "flex-start",
+            }}
+          >
+            <Text style={{ marginRight: 7, fontSize: 13 }}>⚠️</Text>
+
+            <Text
+              style={{
+                flex: 1,
+                color: "#9a3412",
+                fontWeight: "400",
+                fontSize: 10,
+                lineHeight: 12,
+              }}
+            >
+              {currentStep.warning}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={{ flexDirection: "row", gap: 9, marginTop: 11 }}>
           <TouchableOpacity
             onPress={goBack}
             disabled={stepIndex === 0}
+            activeOpacity={0.82}
             style={{
               flex: 1,
-              padding: 14,
-              borderRadius: 10,
+              paddingVertical: 11,
+              borderRadius: 11,
               borderWidth: 1,
-              borderColor: "#ccc",
-              backgroundColor: stepIndex === 0 ? "#f1f5f9" : "white",
-              opacity: stepIndex === 0 ? 0.5 : 1,
+              borderColor: "#cbd5e1",
+              backgroundColor: stepIndex === 0 ? "#f1f5f9" : "#ffffff",
+              opacity: stepIndex === 0 ? 0.45 : 1,
             }}
           >
-            <Text style={{ textAlign: "center", fontWeight: "bold" }}>
+            <Text
+              style={{
+                textAlign: "center",
+                fontWeight: "500",
+                fontSize: 12,
+                color: "#475569",
+              }}
+            >
               Back
             </Text>
           </TouchableOpacity>
@@ -975,17 +1103,19 @@ export function GuidanceCard({
                 restartPractice();
                 resetSimulation();
               }}
+              activeOpacity={0.82}
               style={{
-                flex: 1,
-                padding: 14,
-                borderRadius: 10,
+                flex: 1.35,
+                paddingVertical: 11,
+                borderRadius: 11,
                 backgroundColor: "#16a34a",
               }}
             >
               <Text
                 style={{
                   textAlign: "center",
-                  fontWeight: "bold",
+                  fontWeight: "600",
+                  fontSize: 12,
                   color: "white",
                 }}
               >
@@ -995,25 +1125,30 @@ export function GuidanceCard({
           ) : (
             <TouchableOpacity
               onPress={goNext}
+              activeOpacity={0.82}
               style={{
-                flex: 1,
-                padding: 14,
-                borderRadius: 10,
+                flex: 1.35,
+                paddingVertical: 11,
+                borderRadius: 11,
                 backgroundColor: "#0891b2",
               }}
             >
               <Text
                 style={{
                   textAlign: "center",
-                  fontWeight: "bold",
+                  fontWeight: "600",
+                  fontSize: 12,
                   color: "white",
                 }}
               >
-                Next
+                Next step
               </Text>
             </TouchableOpacity>
           )}
         </View>
+      </View>
+
+      <View>
         {appMode === "practice" ? (
           <>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
@@ -1042,7 +1177,7 @@ export function GuidanceCard({
                     <Text
                       style={{
                         textAlign: "center",
-                        fontWeight: "900",
+                        fontWeight: "800",
                         color: selected ? "white" : "#0f172a",
                         fontSize: 12,
                       }}
@@ -1068,7 +1203,7 @@ export function GuidanceCard({
                     : scenario === "easy"
                       ? "#16a34a"
                       : "#475569",
-                fontWeight: "800",
+                fontWeight: "500",
                 fontSize: 12,
               }}
             >
@@ -1112,7 +1247,7 @@ export function GuidanceCard({
                 style={{
                   color: "white",
                   textAlign: "center",
-                  fontWeight: "900",
+                  fontWeight: "800",
                   fontSize: 12,
                 }}
               >
@@ -1140,44 +1275,13 @@ export function GuidanceCard({
                 style={{
                   color: "white",
                   textAlign: "center",
-                  fontWeight: "900",
+                  fontWeight: "800",
                   fontSize: 12,
                 }}
               >
                 🔁 Repeat
               </Text>
             </TouchableOpacity>
-          </View>
-        ) : null}
-        <Text
-          style={{
-            marginTop: 10,
-            fontSize: 14,
-            fontWeight: "bold",
-            color: "#0f172a",
-          }}
-        >
-          {currentStep.title}
-        </Text>
-        <Text style={{ marginTop: 10, fontSize: 12, lineHeight: 15 }}>
-          {currentStep.instruction}
-        </Text>
-        {currentStep.warning ? (
-          <View
-            style={{
-              marginTop: 6,
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: "#fff7ed",
-              borderWidth: 1,
-              borderColor: "#fed7aa",
-            }}
-          >
-            <Text
-              style={{ color: "#9a3412", fontWeight: "bold", fontSize: 10 }}
-            >
-              ⚠️ {currentStep.warning}
-            </Text>
           </View>
         ) : null}
         <ParkingDiagram
@@ -1247,7 +1351,7 @@ export function GuidanceCard({
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "900",
+                fontWeight: "800",
                 color: "#991b1b",
                 textAlign: "center",
               }}
@@ -1259,7 +1363,7 @@ export function GuidanceCard({
               style={{
                 marginTop: 6,
                 fontSize: 13,
-                fontWeight: "700",
+                fontWeight: "500",
                 color: "#7f1d1d",
                 textAlign: "center",
                 lineHeight: 18,
@@ -1284,7 +1388,7 @@ export function GuidanceCard({
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "900",
+                fontWeight: "800",
                 color: "#14532d",
                 textAlign: "center",
               }}
@@ -1296,7 +1400,7 @@ export function GuidanceCard({
               style={{
                 marginTop: 6,
                 fontSize: 13,
-                fontWeight: "700",
+                fontWeight: "500",
                 color: "#14532d",
                 textAlign: "center",
                 lineHeight: 18,
@@ -1321,7 +1425,7 @@ export function GuidanceCard({
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "900",
+                fontWeight: "800",
                 color: "#075985",
                 textAlign: "center",
               }}
@@ -1333,7 +1437,7 @@ export function GuidanceCard({
               style={{
                 marginTop: 6,
                 fontSize: 13,
-                fontWeight: "700",
+                fontWeight: "500",
                 color: "#075985",
                 textAlign: "center",
                 lineHeight: 18,
@@ -1356,7 +1460,7 @@ export function GuidanceCard({
               <Text
                 style={{
                   fontSize: 12,
-                  fontWeight: "900",
+                  fontWeight: "800",
                   color: "#0f172a",
                   textAlign: "center",
                   lineHeight: 17,

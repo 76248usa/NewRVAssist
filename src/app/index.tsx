@@ -123,107 +123,130 @@ function CompactSetupSummaryCard({
     <View
       style={{
         marginTop: 12,
-        padding: 12,
-        borderRadius: 16,
+        borderRadius: 14,
         backgroundColor: "#f8fafc",
         borderWidth: 1,
-        borderColor: "#cbd5e1",
+        borderColor: "#dbe3ef",
+        overflow: "hidden",
       }}
     >
       <TouchableOpacity
         onPress={() => setExpanded((value) => !value)}
+        activeOpacity={0.82}
         style={{
+          padding: 12,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
         }}
       >
-        <View style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            marginRight: 12,
+          }}
+        >
           <Text
             style={{
-              fontSize: 14,
-              fontWeight: "900",
-              color: "#0f172a",
+              fontSize: 12,
+              fontWeight: "700",
+              color: "#334155",
+              letterSpacing: 0.2,
             }}
           >
-            Setup Summary
+            Setup
           </Text>
 
           <Text
             style={{
               marginTop: 4,
+              fontSize: 13,
+              fontWeight: "600",
+              color: "#0f172a",
+              lineHeight: 18,
+            }}
+          >
+            {getParkingTypeLabel(parkingType)}
+            {parkingType === "back-in"
+              ? ` • ${getCampsiteTypeLabel(campsiteType)}`
+              : ""}
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 3,
               fontSize: 11,
-              fontWeight: "800",
-              color: "#475569",
+              fontWeight: "400",
+              color: "#64748b",
               lineHeight: 16,
             }}
           >
-            {`${getParkingTypeLabel(parkingType)} • ${
-              parkingType === "back-in"
-                ? `${getCampsiteTypeLabel(campsiteType)} • `
-                : ""
-            }${getBackingSideLabel(backingSide)} • ${totalLength} ft`}
+            {getBackingSideLabel(backingSide)} • {totalLength} ft • {scenario}
           </Text>
         </View>
 
         <View
           style={{
-            paddingVertical: 5,
-            paddingHorizontal: 9,
-            borderRadius: 999,
-            backgroundColor: expanded ? "#e0f2fe" : "#f1f5f9",
+            width: 28,
+            height: 28,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: expanded ? "#e0f2fe" : "#eef2f7",
             borderWidth: 1,
             borderColor: expanded ? "#38bdf8" : "#cbd5e1",
           }}
         >
           <Text
+            allowFontScaling={false}
             style={{
-              fontSize: 10,
-              fontWeight: "900",
+              fontSize: 18,
+              fontWeight: "600",
               color: expanded ? "#075985" : "#475569",
+              textAlign: "center",
+              lineHeight: 18,
+              includeFontPadding: false,
+              transform: [{ translateY: -1 }],
             }}
           >
-            {expanded ? "Hide" : "Edit"}
+            {expanded ? "−" : "+"}
           </Text>
         </View>
       </TouchableOpacity>
 
       <View
         style={{
-          marginTop: 10,
-          gap: 6,
+          paddingHorizontal: 12,
+          paddingBottom: 12,
+          gap: 5,
         }}
       >
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "800",
-            color: "#0f172a",
+            fontWeight: "400",
+            color: "#475569",
             lineHeight: 16,
           }}
         >
-          Rig: Truck {truckLength} ft + trailer {trailerLength} ft ={" "}
-          {totalLength} ft
+          Truck {truckLength} ft + trailer {trailerLength} ft = {totalLength} ft
         </Text>
 
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "800",
-            color: "#0f172a",
+            fontWeight: "400",
+            color: "#475569",
             lineHeight: 16,
           }}
         >
-          Backing side: {getBackingSideLabel(backingSide)} • Scenario:{" "}
-          {scenario}
+          Backing side: {getBackingSideLabel(backingSide)}
         </Text>
 
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "800",
-            color: obstacles.length > 0 ? "#92400e" : "#475569",
+            fontWeight: obstacles.length > 0 ? "600" : "400",
+            color: obstacles.length > 0 ? "#92400e" : "#64748b",
             lineHeight: 16,
           }}
         >
@@ -232,106 +255,129 @@ function CompactSetupSummaryCard({
       </View>
 
       {expanded ? (
-        <View style={{ marginTop: 12 }}>
-          <TouchableOpacity
-            onPress={onEditRigSetup}
+        <View
+          style={{
+            paddingHorizontal: 12,
+            paddingBottom: 12,
+          }}
+        >
+          <View
             style={{
-              padding: 12,
-              borderRadius: 12,
-              backgroundColor: "#e0f2fe",
-              borderWidth: 1,
-              borderColor: "#38bdf8",
+              paddingTop: 12,
+              borderTopWidth: 1,
+              borderTopColor: "#e2e8f0",
             }}
           >
-            <Text
+            <TouchableOpacity
+              onPress={onEditRigSetup}
+              activeOpacity={0.82}
               style={{
-                color: "#075985",
-                textAlign: "center",
-                fontSize: 12,
-                fontWeight: "900",
+                padding: 11,
+                borderRadius: 11,
+                backgroundColor: "#eff6ff",
+                borderWidth: 1,
+                borderColor: "#bfdbfe",
               }}
             >
-              Edit Rig Setup
-            </Text>
-          </TouchableOpacity>
-
-          <ParkingTypeSelector
-            parkingType={parkingType}
-            selectParkingType={selectParkingType}
-          />
-
-          {parkingType === "back-in" ? (
-            <CampsiteSetupCard
-              campsiteType={campsiteType}
-              setCampsiteType={setCampsiteType}
-            />
-          ) : null}
-
-          {parkingType === "back-in" ? (
-            <View style={{ marginTop: 12 }}>
               <Text
                 style={{
-                  fontSize: 13,
-                  fontWeight: "900",
-                  color: "#334155",
-                  marginBottom: 8,
-                }}
-              >
-                Backing Side
-              </Text>
-
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                {(["left", "right"] as const).map((side) => (
-                  <TouchableOpacity
-                    key={side}
-                    onPress={() => setBackingSide(side)}
-                    style={{
-                      flex: 1,
-                      padding: 12,
-                      borderRadius: 12,
-                      borderWidth: 2,
-                      borderColor: backingSide === side ? "#0f766e" : "#cbd5e1",
-                      backgroundColor:
-                        backingSide === side ? "#ccfbf1" : "white",
-                    }}
-                  >
-                    <Text
-                      style={{
-                        textAlign: "center",
-                        fontSize: 13,
-                        fontWeight: "900",
-                        color: backingSide === side ? "#115e59" : "#334155",
-                      }}
-                    >
-                      {side === "left" ? "Driver side" : "Passenger side"}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text
-                style={{
-                  marginTop: 6,
+                  color: "#1d4ed8",
+                  textAlign: "center",
                   fontSize: 12,
-                  fontWeight: "700",
-                  color: "#64748b",
-                  lineHeight: 17,
+                  fontWeight: "600",
                 }}
               >
-                Choose which side the trailer will enter from while backing.
+                Edit rig dimensions
               </Text>
-            </View>
-          ) : null}
+            </TouchableOpacity>
 
-          <SiteObstacleSelector
-            obstacles={obstacles}
-            setObstacles={setObstacles}
-          />
+            <ParkingTypeSelector
+              parkingType={parkingType}
+              selectParkingType={selectParkingType}
+            />
 
-          <ReadyToBackChecklistCard
-            parkingType={parkingType}
-            obstacles={obstacles}
-          />
+            {parkingType === "back-in" ? (
+              <CampsiteSetupCard
+                campsiteType={campsiteType}
+                setCampsiteType={setCampsiteType}
+              />
+            ) : null}
+
+            {parkingType === "back-in" ? (
+              <View style={{ marginTop: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: "#334155",
+                    marginBottom: 8,
+                  }}
+                >
+                  Backing side
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: 10,
+                  }}
+                >
+                  {(["left", "right"] as const).map((side) => {
+                    const selected = backingSide === side;
+
+                    return (
+                      <TouchableOpacity
+                        key={side}
+                        onPress={() => setBackingSide(side)}
+                        activeOpacity={0.82}
+                        style={{
+                          flex: 1,
+                          padding: 11,
+                          borderRadius: 11,
+                          borderWidth: selected ? 2 : 1,
+                          borderColor: selected ? "#0f766e" : "#cbd5e1",
+                          backgroundColor: selected ? "#ccfbf1" : "white",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            textAlign: "center",
+                            fontSize: 12,
+                            fontWeight: selected ? "700" : "500",
+                            color: selected ? "#115e59" : "#475569",
+                          }}
+                        >
+                          {side === "left" ? "Driver side" : "Passenger side"}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <Text
+                  style={{
+                    marginTop: 7,
+                    fontSize: 11,
+                    fontWeight: "400",
+                    color: "#64748b",
+                    lineHeight: 16,
+                  }}
+                >
+                  Choose the side from which the trailer will enter the site.
+                </Text>
+              </View>
+            ) : null}
+
+            <SiteObstacleSelector
+              obstacles={obstacles}
+              setObstacles={setObstacles}
+            />
+
+            <ReadyToBackChecklistCard
+              parkingType={parkingType}
+              obstacles={obstacles}
+            />
+          </View>
         </View>
       ) : null}
     </View>
@@ -950,7 +996,7 @@ export default function Index() {
           <Text
             style={{
               fontSize: 12,
-              fontWeight: "900",
+              fontWeight: "600",
               color: "#92400e",
               textTransform: "uppercase",
               letterSpacing: 0.5,
@@ -963,7 +1009,7 @@ export default function Index() {
           <Text
             style={{
               fontSize: 13,
-              fontWeight: "800",
+              fontWeight: "400",
               color: "#92400e",
               lineHeight: 18,
             }}

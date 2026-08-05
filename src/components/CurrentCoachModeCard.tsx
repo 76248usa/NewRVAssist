@@ -40,7 +40,7 @@ function getScenarioLabel(scenario: Scenario) {
 }
 
 function getObstacleSummary(obstacles: SiteObstacle[]) {
-  if (obstacles.length === 0) return "No obstacles";
+  if (obstacles.length === 0) return "No obstacles selected";
 
   const labels: string[] = [];
 
@@ -61,99 +61,228 @@ export function CurrentCoachModeCard({
   appMode,
   setAppMode,
 }: Props) {
+  const isParkingMode = appMode === "parking";
+  const isPracticeMode = appMode === "practice";
+
+  const setupSummary =
+    parkingType === "pull-through"
+      ? `${getParkingTypeLabel(parkingType)} • Drive-through guidance`
+      : `${getParkingTypeLabel(parkingType)} • ${getBackingSideLabel(
+          backingSide,
+        )} • ${getCampsiteLabel(campsiteType)}`;
+
   return (
     <View
       style={{
         marginTop: 12,
         padding: 12,
         borderRadius: 14,
-        backgroundColor: "#eef2ff",
+        backgroundColor: "#f8faff",
         borderWidth: 1,
-        borderColor: "#c7d2fe",
+        borderColor: "#dbe4ff",
       }}
     >
-      <Text
+      <View
         style={{
-          fontSize: 12,
-          fontWeight: "900",
-          color: "#3730a3",
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
+          flexDirection: "row",
+          alignItems: "center",
         }}
       >
-        Smart Coach Active
-      </Text>
+        <View
+          style={{
+            width: 28,
+            height: 28,
+            marginRight: 9,
+            borderRadius: 14,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#e0e7ff",
+          }}
+        >
+          <Text
+            allowFontScaling={false}
+            style={{
+              fontSize: 14,
+              lineHeight: 16,
+              includeFontPadding: false,
+            }}
+          >
+            🧭
+          </Text>
+        </View>
+
+        <View style={{ flex: 1 }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "600",
+              color: "#3730a3",
+              letterSpacing: 0.2,
+            }}
+          >
+            Smart Coach
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 2,
+              fontSize: 11,
+              fontWeight: "400",
+              color: "#6366a3",
+              lineHeight: 15,
+            }}
+          >
+            Guidance is adjusted to your current setup.
+          </Text>
+        </View>
+
+        <View
+          style={{
+            paddingVertical: 3,
+            paddingHorizontal: 8,
+            borderRadius: 999,
+            backgroundColor: "#eef2ff",
+            borderWidth: 1,
+            borderColor: "#c7d2fe",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 9,
+              fontWeight: "500",
+              color: "#4338ca",
+            }}
+          >
+            Active
+          </Text>
+        </View>
+      </View>
 
       <View
         style={{
-          marginTop: 14,
-          padding: 12,
-          borderRadius: 16,
-          backgroundColor: "white",
+          marginTop: 11,
+          padding: 10,
+          borderRadius: 12,
+          backgroundColor: "#ffffff",
           borderWidth: 1,
-          borderColor: "#cbd5e1",
+          borderColor: "#e2e8f0",
         }}
       >
         <Text
           style={{
-            fontSize: 12,
-            fontWeight: "900",
-            color: "#0f172a",
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
-            textAlign: "center",
+            fontSize: 11,
+            fontWeight: "600",
+            color: "#334155",
+            marginBottom: 8,
           }}
         >
-          Use Mode
+          Coach mode
         </Text>
 
-        <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 8,
+          }}
+        >
           <TouchableOpacity
             onPress={() => setAppMode("parking")}
+            activeOpacity={0.82}
             style={{
               flex: 1,
-              paddingVertical: 12,
-              paddingHorizontal: 10,
-              borderRadius: 12,
-              backgroundColor: appMode === "parking" ? "#16a34a" : "#f1f5f9",
-              borderWidth: 1,
-              borderColor: appMode === "parking" ? "#16a34a" : "#cbd5e1",
+              minHeight: 68,
+              paddingVertical: 9,
+              paddingHorizontal: 8,
+              borderRadius: 11,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: isParkingMode ? "#f0fdf4" : "#f8fafc",
+              borderWidth: isParkingMode ? 2 : 1,
+              borderColor: isParkingMode ? "#16a34a" : "#dbe3ef",
             }}
           >
             <Text
               style={{
+                fontSize: 16,
+                marginBottom: 4,
+              }}
+            >
+              🚐
+            </Text>
+
+            <Text
+              style={{
                 textAlign: "center",
-                fontSize: 12,
-                fontWeight: "900",
-                color: appMode === "parking" ? "white" : "#475569",
+                fontSize: 11,
+                fontWeight: isParkingMode ? "700" : "500",
+                color: isParkingMode ? "#166534" : "#475569",
               }}
             >
               Parking Coach
             </Text>
+
+            {isParkingMode ? (
+              <Text
+                style={{
+                  marginTop: 3,
+                  fontSize: 9,
+                  fontWeight: "500",
+                  color: "#15803d",
+                }}
+              >
+                Selected
+              </Text>
+            ) : null}
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setAppMode("practice")}
+            activeOpacity={0.82}
             style={{
               flex: 1,
-              paddingVertical: 12,
-              paddingHorizontal: 10,
-              borderRadius: 12,
-              backgroundColor: appMode === "practice" ? "#7c3aed" : "#f1f5f9",
-              borderWidth: 1,
-              borderColor: appMode === "practice" ? "#7c3aed" : "#cbd5e1",
+              minHeight: 68,
+              paddingVertical: 9,
+              paddingHorizontal: 8,
+              borderRadius: 11,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: isPracticeMode ? "#f5f3ff" : "#f8fafc",
+              borderWidth: isPracticeMode ? 2 : 1,
+              borderColor: isPracticeMode ? "#7c3aed" : "#dbe3ef",
             }}
           >
             <Text
               style={{
+                fontSize: 16,
+                marginBottom: 4,
+              }}
+            >
+              🎮
+            </Text>
+
+            <Text
+              style={{
                 textAlign: "center",
-                fontSize: 12,
-                fontWeight: "900",
-                color: appMode === "practice" ? "white" : "#475569",
+                fontSize: 11,
+                fontWeight: isPracticeMode ? "700" : "500",
+                color: isPracticeMode ? "#5b21b6" : "#475569",
               }}
             >
               Practice Simulator
             </Text>
+
+            {isPracticeMode ? (
+              <Text
+                style={{
+                  marginTop: 3,
+                  fontSize: 9,
+                  fontWeight: "500",
+                  color: "#6d28d9",
+                }}
+              >
+                Selected
+              </Text>
+            ) : null}
           </TouchableOpacity>
         </View>
 
@@ -161,45 +290,61 @@ export function CurrentCoachModeCard({
           style={{
             marginTop: 8,
             fontSize: 11,
-            fontWeight: "800",
-            color: "#475569",
+            fontWeight: "400",
+            color: "#64748b",
             textAlign: "center",
             lineHeight: 16,
           }}
         >
-          {appMode === "parking"
-            ? "Real parking view: next action, LiDAR, and safety guidance."
-            : "Practice view: simulator controls, jackknife practice, and recovery training."}
+          {isParkingMode
+            ? "Real parking guidance with next actions, distance checks, and safety coaching."
+            : "Simulator controls for steering, jackknife prevention, and recovery practice."}
         </Text>
       </View>
 
-      <Text
+      <View
         style={{
-          marginTop: 6,
-          fontSize: 14,
-          fontWeight: "900",
-          color: "#0f172a",
-          lineHeight: 19,
+          marginTop: 10,
+          paddingTop: 10,
+          borderTopWidth: 1,
+          borderTopColor: "#e0e7ff",
         }}
       >
-        {parkingType === "pull-through"
-          ? `${getParkingTypeLabel(parkingType)} • Drive-through guidance`
-          : `${getParkingTypeLabel(parkingType)} • ${getBackingSideLabel(
-              backingSide,
-            )} • ${getCampsiteLabel(campsiteType)}`}
-      </Text>
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "600",
+            color: "#0f172a",
+            lineHeight: 17,
+          }}
+        >
+          {setupSummary}
+        </Text>
 
-      <Text
-        style={{
-          marginTop: 4,
-          fontSize: 12,
-          fontWeight: "800",
-          color: "#475569",
-          lineHeight: 17,
-        }}
-      >
-        {getScenarioLabel(scenario)} difficulty •{getObstacleSummary(obstacles)}
-      </Text>
+        <Text
+          style={{
+            marginTop: 4,
+            fontSize: 11,
+            fontWeight: "400",
+            color: "#64748b",
+            lineHeight: 16,
+          }}
+        >
+          {getScenarioLabel(scenario)} difficulty
+        </Text>
+
+        <Text
+          style={{
+            marginTop: 2,
+            fontSize: 11,
+            fontWeight: obstacles.length > 0 ? "500" : "400",
+            color: obstacles.length > 0 ? "#92400e" : "#64748b",
+            lineHeight: 16,
+          }}
+        >
+          {getObstacleSummary(obstacles)}
+        </Text>
+      </View>
     </View>
   );
 }

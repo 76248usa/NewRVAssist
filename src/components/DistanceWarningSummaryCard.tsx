@@ -19,42 +19,186 @@ type Props = {
   distanceSource?: DistanceSource;
   stopRecoveryConfirmed?: boolean;
   onChangeStopRecoveryConfirmed?: (value: boolean) => void;
+  onResetDistances?: () => void;
 };
 
 export function DistanceWarningSummaryCard({
   clearanceItems,
   compact = false,
   showVoiceButton = true,
-  distanceSource = "manual",
+  distanceSource,
   stopRecoveryConfirmed = false,
   onChangeStopRecoveryConfirmed,
+  onResetDistances,
 }: Props) {
   const worstLevel = useMemo<ClearanceLevel>(() => {
     const levels = clearanceItems.map((item) => getClearanceLevel(item.value));
 
-    if (levels.includes("stop")) return "stop";
-    if (levels.includes("caution")) return "caution";
+    if (levels.includes("stop")) {
+      return "stop";
+    }
+
+    if (levels.includes("caution")) {
+      return "caution";
+    }
+
     return "safe";
   }, [clearanceItems]);
-
-  const distanceSourceLabel =
-    distanceSource === "lidar" ? "Test LiDAR Reading" : "Manual Entry";
 
   const warningReason = useMemo(() => {
     return getSpecificWarningReason(clearanceItems);
   }, [clearanceItems]);
-  const recommendedAction = getRecommendedAction(worstLevel);
 
+  const recommendedAction = getRecommendedAction(worstLevel);
   const levelStyles = getLevelStyles(worstLevel);
+
   const voiceWarning = getVoiceWarning(
     worstLevel,
     warningReason,
     recommendedAction,
   );
 
-  // const showStopRecovery =
-  //   worstLevel === "stop" && !compact && !!onChangeStopRecoveryConfirmed;
-  const showStopRecovery = worstLevel === "stop" && !compact;
+  /*
+   * Convert the source to plain text before checking it.
+   * This prevents TypeScript errors when DistanceSource does not
+   * contain the exact literal value "lidar".
+   */
+  const distanceSourceText = String(distanceSource ?? "manual").toLowerCase();
+
+  const isLidarSource = distanceSourceText.includes("lidar");
+
+  const distanceSourceLabel = isLidarSource ? "Test LiDAR" : "Manual";
+
+  const speakWarning = async () => {
+    try {
+      await Speech.stop();
+
+      setTimeout(() => {
+        Speech.speak(voiceWarning, {
+          language: "en-US",
+          rate: 0.9,
+          pitch: 1,
+        });
+      }, 150);
+    } catch {
+      Speech.speak(voiceWarning, {
+        language: "en-US",
+        rate: 0.9,
+        pitch: 1,
+      });
+    }
+  };
+
+  /*
+   * Lean SAFE card
+   *
+   * SAFE only shows:
+   * - status
+   * - a short clearance message
+   * - distance source
+   *
+   * It does not show warning, action, recovery, or voice controls.
+   */
+  if (worstLevel === "safe") {
+    return (
+      <View
+        style={{
+          marginTop: compact ? 6 : 10,
+          paddingVertical: compact ? 7 : 9,
+          paddingHorizontal: 12,
+          borderRadius: 12,
+          backgroundColor: levelStyles.backgroundColor,
+          borderWidth: 1,
+          borderColor: levelStyles.borderColor,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            flexDirection: "row",
+            alignItems: "center",
+            marginRight: 8,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: compact ? 13 : 14,
+              fontWeight: "900",
+              color: levelStyles.textColor,
+              marginRight: 7,
+            }}
+          >
+            ✓ SAFE
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              fontSize: compact ? 11 : 12,
+              fontWeight: "700",
+              color: levelStyles.textColor,
+            }}
+          >
+            Clearances are within the safe range
+          </Text>
+        </View>
+
+        <View
+          style={{
+            paddingVertical: 3,
+            paddingHorizontal: 7,
+            borderRadius: 999,
+            backgroundColor: isLidarSource
+              ? "#ecfeff"
+              : "rgba(255,255,255,0.7)",
+            borderWidth: 1,
+            borderColor: isLidarSource ? "#06b6d4" : levelStyles.borderColor,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 9,
+              fontWeight: "900",
+              color: isLidarSource ? "#0e7490" : levelStyles.textColor,
+            }}
+          >
+            {distanceSourceLabel}
+          </Text>
+        </View>
+
+        {onResetDistances ? (
+          <TouchableOpacity
+            onPress={onResetDistances}
+            activeOpacity={0.8}
+            style={{
+              marginLeft: 7,
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 8,
+              backgroundColor: "white",
+              borderWidth: 1,
+              borderColor: levelStyles.borderColor,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "900",
+                color: levelStyles.textColor,
+              }}
+            >
+              Reset
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+    );
+  }
+  const showStopRecovery =
+    worstLevel === "stop" && !compact && Boolean(onChangeStopRecoveryConfirmed);
 
   return (
     <View
@@ -67,57 +211,92 @@ export function DistanceWarningSummaryCard({
         borderColor: levelStyles.borderColor,
       }}
     >
-      <Text
-        style={{
-          fontSize: compact ? 13 : 16,
-          fontWeight: "900",
-          color: levelStyles.textColor,
-          textAlign: "center",
-        }}
-      >
-        {levelStyles.label}
-      </Text>
       <View
         style={{
-          alignSelf: "flex-start",
-          marginTop: 6,
-          paddingVertical: 3,
-          paddingHorizontal: 8,
-          borderRadius: 999,
-          backgroundColor: distanceSource === "lidar" ? "#ecfeff" : "#f1f5f9",
-          borderWidth: 1,
-          borderColor: distanceSource === "lidar" ? "#06b6d4" : "#cbd5e1",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
         }}
       >
         <Text
           style={{
-            fontSize: 10,
+            flex: 1,
+            fontSize: compact ? 13 : 16,
             fontWeight: "900",
-            color: distanceSource === "lidar" ? "#0e7490" : "#475569",
+            color: levelStyles.textColor,
+            marginRight: 8,
           }}
         >
-          Distance Source: {distanceSourceLabel}
+          {levelStyles.label}
         </Text>
+
+        <View
+          style={{
+            paddingVertical: 3,
+            paddingHorizontal: 8,
+            borderRadius: 999,
+            backgroundColor: isLidarSource ? "#ecfeff" : "#f1f5f9",
+            borderWidth: 1,
+            borderColor: isLidarSource ? "#06b6d4" : "#cbd5e1",
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 9,
+              fontWeight: "900",
+              color: isLidarSource ? "#0e7490" : "#475569",
+            }}
+          >
+            {distanceSourceLabel}
+          </Text>
+        </View>
+
+        {onResetDistances ? (
+          <TouchableOpacity
+            onPress={onResetDistances}
+            activeOpacity={0.8}
+            style={{
+              marginLeft: 7,
+              paddingVertical: 4,
+              paddingHorizontal: 8,
+              borderRadius: 8,
+              backgroundColor: "white",
+              borderWidth: 1,
+              borderColor: levelStyles.borderColor,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "900",
+                color: levelStyles.textColor,
+              }}
+            >
+              Reset
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
+
       {!compact ? (
         <Text
           style={{
-            marginTop: 4,
-            fontSize: 13,
+            marginTop: 5,
+            fontSize: 12,
             fontWeight: "800",
             color: levelStyles.textColor,
-            textAlign: "center",
-            lineHeight: 18,
+            lineHeight: 17,
           }}
         >
           {levelStyles.message}
         </Text>
       ) : null}
+
       <View
         style={{
-          marginTop: 10,
-          padding: 10,
-          borderRadius: 12,
+          marginTop: 9,
+          padding: compact ? 8 : 10,
+          borderRadius: 11,
           backgroundColor: "rgba(255,255,255,0.75)",
           borderWidth: 1,
           borderColor: levelStyles.borderColor,
@@ -125,21 +304,21 @@ export function DistanceWarningSummaryCard({
       >
         <Text
           style={{
-            fontSize: compact ? 12 : 13,
+            fontSize: compact ? 11 : 12,
             fontWeight: "900",
             color: levelStyles.textColor,
-            textAlign: "center",
-            lineHeight: 18,
+            lineHeight: compact ? 15 : 17,
           }}
         >
           {warningReason}
         </Text>
       </View>
+
       <View
         style={{
-          marginTop: compact ? 6 : 10,
+          marginTop: 8,
           padding: compact ? 8 : 10,
-          borderRadius: 12,
+          borderRadius: 11,
           backgroundColor: "rgba(255,255,255,0.55)",
           borderWidth: 1,
           borderColor: levelStyles.borderColor,
@@ -147,19 +326,19 @@ export function DistanceWarningSummaryCard({
       >
         <Text
           style={{
-            fontSize: compact ? 10 : 11,
+            fontSize: 10,
             fontWeight: "900",
             color: levelStyles.textColor,
             textTransform: "uppercase",
             letterSpacing: 0.4,
           }}
         >
-          Recommended Action
+          Next action
         </Text>
 
         <Text
           style={{
-            marginTop: 4,
+            marginTop: 3,
             fontSize: compact ? 11 : 12,
             fontWeight: "800",
             color: levelStyles.textColor,
@@ -169,12 +348,13 @@ export function DistanceWarningSummaryCard({
           {recommendedAction}
         </Text>
       </View>
+
       {showStopRecovery ? (
         <View
           style={{
-            marginTop: compact ? 8 : 10,
-            padding: compact ? 8 : 10,
-            borderRadius: 12,
+            marginTop: 9,
+            padding: 10,
+            borderRadius: 11,
             backgroundColor: "rgba(255,255,255,0.7)",
             borderWidth: 1,
             borderColor: levelStyles.borderColor,
@@ -182,14 +362,14 @@ export function DistanceWarningSummaryCard({
         >
           <Text
             style={{
-              fontSize: compact ? 10 : 11,
+              fontSize: 10,
               fontWeight: "900",
               color: levelStyles.textColor,
               textTransform: "uppercase",
               letterSpacing: 0.4,
             }}
           >
-            STOP Recovery
+            STOP recovery
           </Text>
 
           {!stopRecoveryConfirmed ? (
@@ -197,14 +377,13 @@ export function DistanceWarningSummaryCard({
               <Text
                 style={{
                   marginTop: 5,
-                  fontSize: compact ? 11 : 12,
+                  fontSize: 12,
                   fontWeight: "800",
                   color: levelStyles.textColor,
-                  lineHeight: compact ? 15 : 17,
+                  lineHeight: 17,
                 }}
               >
-                Do not move yet. Get out and inspect the closest obstacle before
-                continuing.
+                Do not move. Get out and inspect the closest obstacle.
               </Text>
 
               <TouchableOpacity
@@ -216,7 +395,7 @@ export function DistanceWarningSummaryCard({
                   marginTop: 8,
                   paddingVertical: 9,
                   paddingHorizontal: 10,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   backgroundColor: levelStyles.textColor,
                 }}
               >
@@ -224,7 +403,7 @@ export function DistanceWarningSummaryCard({
                   style={{
                     color: "white",
                     textAlign: "center",
-                    fontSize: compact ? 11 : 12,
+                    fontSize: 12,
                     fontWeight: "900",
                   }}
                 >
@@ -237,8 +416,8 @@ export function DistanceWarningSummaryCard({
               <View
                 style={{
                   marginTop: 8,
-                  padding: compact ? 9 : 11,
-                  borderRadius: 12,
+                  padding: 10,
+                  borderRadius: 10,
                   backgroundColor: "#dcfce7",
                   borderWidth: 1,
                   borderColor: "#22c55e",
@@ -246,7 +425,7 @@ export function DistanceWarningSummaryCard({
               >
                 <Text
                   style={{
-                    fontSize: compact ? 11 : 12,
+                    fontSize: 11,
                     fontWeight: "900",
                     color: "#166534",
                     textAlign: "center",
@@ -254,32 +433,34 @@ export function DistanceWarningSummaryCard({
                     letterSpacing: 0.4,
                   }}
                 >
-                  Recovery Check Confirmed
+                  Recovery check confirmed
                 </Text>
 
                 <Text
                   style={{
-                    marginTop: 5,
-                    fontSize: compact ? 11 : 12,
+                    marginTop: 4,
+                    fontSize: 12,
                     fontWeight: "800",
                     color: "#166534",
                     textAlign: "center",
-                    lineHeight: compact ? 15 : 17,
+                    lineHeight: 17,
                   }}
                 >
-                  Pull forward slowly to reset if clearance is still tight.
-                  Re-check before backing again.
+                  Pull forward slowly if clearance remains tight. Re-check
+                  before backing again.
                 </Text>
               </View>
 
               <TouchableOpacity
-                onPress={() => onChangeStopRecoveryConfirmed?.(false)}
+                onPress={() => {
+                  onChangeStopRecoveryConfirmed?.(false);
+                }}
                 activeOpacity={0.85}
                 style={{
                   marginTop: 8,
-                  paddingVertical: 9,
+                  paddingVertical: 8,
                   paddingHorizontal: 10,
-                  borderRadius: 12,
+                  borderRadius: 10,
                   backgroundColor: "white",
                   borderWidth: 1,
                   borderColor: levelStyles.borderColor,
@@ -289,44 +470,27 @@ export function DistanceWarningSummaryCard({
                   style={{
                     color: levelStyles.textColor,
                     textAlign: "center",
-                    fontSize: compact ? 11 : 12,
+                    fontSize: 11,
                     fontWeight: "900",
                   }}
                 >
-                  Reset STOP recovery
+                  Reset recovery
                 </Text>
               </TouchableOpacity>
             </>
           )}
         </View>
       ) : null}
+
       {showVoiceButton ? (
         <TouchableOpacity
-          onPress={async () => {
-            try {
-              await Speech.stop();
-
-              setTimeout(() => {
-                Speech.speak(voiceWarning, {
-                  language: "en-US",
-                  rate: 0.9,
-                  pitch: 1.0,
-                });
-              }, 150);
-            } catch {
-              Speech.speak(voiceWarning, {
-                language: "en-US",
-                rate: 0.9,
-                pitch: 1.0,
-              });
-            }
-          }}
+          onPress={speakWarning}
           activeOpacity={0.85}
           style={{
-            marginTop: compact ? 8 : 12,
-            paddingVertical: 10,
+            marginTop: compact ? 8 : 10,
+            paddingVertical: 9,
             paddingHorizontal: 12,
-            borderRadius: 12,
+            borderRadius: 10,
             backgroundColor: levelStyles.textColor,
           }}
         >
@@ -334,11 +498,11 @@ export function DistanceWarningSummaryCard({
             style={{
               color: "white",
               textAlign: "center",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: "900",
             }}
           >
-            🔊 Speak Distance Warning
+            🔊 Speak warning
           </Text>
         </TouchableOpacity>
       ) : null}

@@ -39,6 +39,7 @@ export function ObstacleDistanceInputCard({
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [autoVoiceAlertsEnabled, setAutoVoiceAlertsEnabled] = useState(true);
+
   const lastAutoSpokenStopReasonRef = useRef<string | null>(null);
 
   const leftClearance = clearanceValues.left;
@@ -47,19 +48,42 @@ export function ObstacleDistanceInputCard({
   const roofClearance = clearanceValues.roof;
 
   const setLeftClearance = (value: string) => {
-    onChangeClearanceValues({ ...clearanceValues, left: value });
+    onChangeClearanceValues({
+      ...clearanceValues,
+      left: value,
+    });
   };
 
   const setRightClearance = (value: string) => {
-    onChangeClearanceValues({ ...clearanceValues, right: value });
+    onChangeClearanceValues({
+      ...clearanceValues,
+      right: value,
+    });
   };
 
   const setRearClearance = (value: string) => {
-    onChangeClearanceValues({ ...clearanceValues, rear: value });
+    onChangeClearanceValues({
+      ...clearanceValues,
+      rear: value,
+    });
   };
 
   const setRoofClearance = (value: string) => {
-    onChangeClearanceValues({ ...clearanceValues, roof: value });
+    onChangeClearanceValues({
+      ...clearanceValues,
+      roof: value,
+    });
+  };
+
+  const resetDistances = () => {
+    onChangeClearanceValues({
+      left: "",
+      right: "",
+      rear: "",
+      roof: "",
+    });
+
+    onChangeStopRecoveryConfirmed(false);
   };
 
   const leftValue = parseDistance(leftClearance);
@@ -105,12 +129,7 @@ export function ObstacleDistanceInputCard({
       (hasStopClearance && !stopRecoveryConfirmed));
 
   useEffect(() => {
-    if (shouldAutoOpenManualBackup) {
-      setExpanded(true);
-      return;
-    }
-
-    setExpanded(false);
+    setExpanded(shouldAutoOpenManualBackup);
   }, [shouldAutoOpenManualBackup]);
 
   useEffect(() => {
@@ -122,11 +141,13 @@ export function ObstacleDistanceInputCard({
           AUTO_STOP_VOICE_ALERTS_KEY,
         );
 
-        if (!isMounted || savedValue === null) return;
+        if (!isMounted || savedValue === null) {
+          return;
+        }
 
         setAutoVoiceAlertsEnabled(savedValue === "true");
       } catch {
-        // Keep default setting if loading fails.
+        // Keep the default setting if loading fails.
       }
     }
 
@@ -139,6 +160,7 @@ export function ObstacleDistanceInputCard({
 
   useEffect(() => {
     const levels = clearanceItems.map((item) => getClearanceLevel(item.value));
+
     const hasStopLevel = levels.includes("stop");
 
     if (!hasStopLevel) {
@@ -151,6 +173,7 @@ export function ObstacleDistanceInputCard({
     }
 
     const warningReason = getSpecificWarningReason(clearanceItems);
+
     const voiceWarning = getVoiceWarning("stop", warningReason);
 
     if (lastAutoSpokenStopReasonRef.current === voiceWarning) {
@@ -166,7 +189,7 @@ export function ObstacleDistanceInputCard({
         Speech.speak(voiceWarning, {
           language: "en-US",
           rate: 0.9,
-          pitch: 1.0,
+          pitch: 1,
         });
       }, 150);
     }, 250);
@@ -179,18 +202,70 @@ export function ObstacleDistanceInputCard({
       ? "No selected obstacles"
       : obstacles
           .map((item) => {
-            if (item === "treeLeft") return "Tree left";
-            if (item === "poleRight") return "Pole right";
-            if (item === "lowBranch") return "Low branch";
+            if (item === "treeLeft") {
+              return "Tree left";
+            }
+
+            if (item === "poleRight") {
+              return "Pole right";
+            }
+
+            if (item === "lowBranch") {
+              return "Low branch";
+            }
+
             return "Tight hookup side";
           })
           .join(" • ");
 
+  const setupLabel =
+    parkingType === "pull-through" ? "Pull-through" : "Back-in";
+
+  const emphasizeLeft =
+    obstacles.includes("treeLeft") || obstacles.includes("tightHookupSide");
+
+  const emphasizeRight =
+    obstacles.includes("poleRight") || obstacles.includes("tightHookupSide");
+
+  const emphasizeRoof = obstacles.includes("lowBranch");
+
+  const leftHint = obstacles.includes("treeLeft")
+    ? "Measure the RV side to the closest point of the tree."
+    : obstacles.includes("tightHookupSide")
+      ? "Measure the closest side clearance on the hookup side."
+      : undefined;
+
+  const rightHint = obstacles.includes("poleRight")
+    ? "Measure the RV side to the closest point of the pole."
+    : obstacles.includes("tightHookupSide")
+      ? "Measure the closest side clearance on the hookup side."
+      : undefined;
+
+  const roofHint = obstacles.includes("lowBranch")
+    ? "Measure from the highest roof feature to the lowest branch."
+    : undefined;
+
+  const toggleAutoVoiceAlerts = () => {
+    setAutoVoiceAlertsEnabled((current) => {
+      const nextValue = !current;
+
+      AsyncStorage.setItem(AUTO_STOP_VOICE_ALERTS_KEY, String(nextValue)).catch(
+        () => {
+          // Keep the interface responsive if storage fails.
+        },
+      );
+
+      return nextValue;
+    });
+
+    Speech.stop();
+  };
+
   return (
     <View
       style={{
-        marginTop: 12,
-        padding: 11,
+        marginTop: 10,
+        padding: 10,
         borderRadius: 14,
         backgroundColor: "#f8fafc",
         borderWidth: 1,
@@ -204,37 +279,41 @@ export function ObstacleDistanceInputCard({
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 10,
         }}
       >
-        <View style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            marginRight: 10,
+          }}
+        >
           <Text
             style={{
               fontSize: 13,
-              fontWeight: "700",
+              fontWeight: "800",
               color: "#0f172a",
             }}
           >
-            Manual Distance Backup
+            Manual Distance
           </Text>
 
           <Text
+            numberOfLines={1}
             style={{
-              marginTop: 3,
+              marginTop: 2,
               fontSize: 10,
               fontWeight: "500",
               color: "#64748b",
-              lineHeight: 15,
             }}
           >
-            Use if LiDAR is unavailable or a spotter measured clearance.
+            Backup measurements when LiDAR is unavailable
           </Text>
         </View>
 
         <View
           style={{
             paddingVertical: 4,
-            paddingHorizontal: 8,
+            paddingHorizontal: 9,
             borderRadius: 999,
             backgroundColor: expanded ? "#e0f2fe" : "#f1f5f9",
             borderWidth: 1,
@@ -244,7 +323,7 @@ export function ObstacleDistanceInputCard({
           <Text
             style={{
               fontSize: 10,
-              fontWeight: "700",
+              fontWeight: "800",
               color: expanded ? "#075985" : "#64748b",
             }}
           >
@@ -260,158 +339,179 @@ export function ObstacleDistanceInputCard({
             distanceSource={distanceSource}
             stopRecoveryConfirmed={stopRecoveryConfirmed}
             onChangeStopRecoveryConfirmed={onChangeStopRecoveryConfirmed}
+            onResetDistances={resetDistances}
           />
 
-          <TouchableOpacity
-            onPress={async () => {
-              setAutoVoiceAlertsEnabled((current) => {
-                const nextValue = !current;
-
-                AsyncStorage.setItem(
-                  AUTO_STOP_VOICE_ALERTS_KEY,
-                  String(nextValue),
-                ).catch(() => {
-                  // Ignore storage errors and keep the UI responsive.
-                });
-
-                return nextValue;
-              });
-
-              Speech.stop();
-            }}
-            activeOpacity={0.85}
+          <View
             style={{
-              marginTop: 6,
-              paddingVertical: 9,
-              paddingHorizontal: 10,
+              marginTop: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 7,
+              paddingHorizontal: 9,
               borderRadius: 10,
-              backgroundColor: autoVoiceAlertsEnabled ? "#1e293b" : "#64748b",
+              backgroundColor: "#ffffff",
+              borderWidth: 1,
+              borderColor: "#e2e8f0",
             }}
           >
-            <Text
+            <View
               style={{
-                color: "white",
-                textAlign: "center",
-                fontSize: 12,
-                fontWeight: "700",
+                flex: 1,
+                marginRight: 8,
               }}
             >
-              {autoVoiceAlertsEnabled
-                ? "Auto STOP Voice Alerts: On"
-                : "Auto STOP Voice Alerts: Off"}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "800",
+                  color: "#334155",
+                }}
+              >
+                {setupLabel}
+              </Text>
 
-          <Text
+              <Text
+                numberOfLines={1}
+                style={{
+                  marginTop: 2,
+                  fontSize: 10,
+                  fontWeight: "500",
+                  color: "#64748b",
+                }}
+              >
+                {obstacleText}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={toggleAutoVoiceAlerts}
+              activeOpacity={0.85}
+              style={{
+                paddingVertical: 6,
+                paddingHorizontal: 9,
+                borderRadius: 9,
+                backgroundColor: autoVoiceAlertsEnabled ? "#1e293b" : "#e2e8f0",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 10,
+                  fontWeight: "800",
+                  color: autoVoiceAlertsEnabled ? "#ffffff" : "#475569",
+                }}
+              >
+                Voice {autoVoiceAlertsEnabled ? "On" : "Off"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View
             style={{
-              marginTop: 10,
-              fontSize: 11,
-              fontWeight: "700",
-              color: "#334155",
+              marginTop: 8,
+              flexDirection: "row",
             }}
           >
-            Selected setup
-          </Text>
+            <View
+              style={{
+                flex: 1,
+                marginRight: 4,
+              }}
+            >
+              <DistanceInputTile
+                label="Left"
+                value={leftClearance}
+                onChangeText={setLeftClearance}
+                emphasized={emphasizeLeft}
+                hint={leftHint}
+              />
+            </View>
 
-          <Text
+            <View
+              style={{
+                flex: 1,
+                marginLeft: 4,
+              }}
+            >
+              <DistanceInputTile
+                label="Right"
+                value={rightClearance}
+                onChangeText={setRightClearance}
+                emphasized={emphasizeRight}
+                hint={rightHint}
+              />
+            </View>
+          </View>
+
+          <View
             style={{
-              marginTop: 3,
-              fontSize: 11,
-              fontWeight: "500",
-              color: "#64748b",
-              lineHeight: 16,
+              marginTop: 8,
+              flexDirection: "row",
             }}
           >
-            {parkingType === "pull-through" ? "Pull-through" : "Back-in"} •{" "}
-            {obstacleText}
-          </Text>
+            <View
+              style={{
+                flex: 1,
+                marginRight: 4,
+              }}
+            >
+              <DistanceInputTile
+                label="Rear"
+                value={rearClearance}
+                onChangeText={setRearClearance}
+              />
+            </View>
 
-          <View style={{ marginTop: 10, gap: 8 }}>
-            <DistanceInputRow
-              label="Left side clearance"
-              value={leftClearance}
-              onChangeText={setLeftClearance}
-            />
-
-            <DistanceInputRow
-              label="Right side clearance"
-              value={rightClearance}
-              onChangeText={setRightClearance}
-            />
-
-            <DistanceInputRow
-              label="Rear clearance"
-              value={rearClearance}
-              onChangeText={setRearClearance}
-            />
-
-            <DistanceInputRow
-              label="Roof / branch clearance"
-              value={roofClearance}
-              onChangeText={setRoofClearance}
-            />
+            <View
+              style={{
+                flex: 1,
+                marginLeft: 4,
+              }}
+            >
+              <DistanceInputTile
+                label="Roof"
+                value={roofClearance}
+                onChangeText={setRoofClearance}
+                emphasized={emphasizeRoof}
+                hint={roofHint}
+              />
+            </View>
           </View>
 
           <Text
             style={{
-              marginTop: 9,
-              fontSize: 10,
-              fontWeight: "500",
+              marginTop: 8,
+              fontSize: 9,
+              fontWeight: "600",
               color: "#64748b",
-              lineHeight: 15,
+              lineHeight: 13,
               textAlign: "center",
             }}
           >
-            Enter distances in inches. 36 inches or less = caution. 18 inches or
-            less = stop and get out to look.
+            Inches • 36 or less: caution • 18 or less: stop and inspect
           </Text>
-
-          <TouchableOpacity
-            onPress={() => {
-              onChangeClearanceValues({
-                left: "",
-                right: "",
-                rear: "",
-                roof: "",
-              });
-            }}
-            activeOpacity={0.85}
-            style={{
-              marginTop: 10,
-              paddingVertical: 9,
-              paddingHorizontal: 10,
-              borderRadius: 10,
-              backgroundColor: "#e2e8f0",
-            }}
-          >
-            <Text
-              style={{
-                textAlign: "center",
-                fontSize: 12,
-                fontWeight: "700",
-                color: "#0f172a",
-              }}
-            >
-              Reset distances
-            </Text>
-          </TouchableOpacity>
         </>
       ) : null}
     </View>
   );
 }
 
-type DistanceInputRowProps = {
+type DistanceInputTileProps = {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
+  emphasized?: boolean;
+  hint?: string;
 };
 
-function DistanceInputRow({
+function DistanceInputTile({
   label,
   value,
   onChangeText,
-}: DistanceInputRowProps) {
+  emphasized = false,
+  hint,
+}: DistanceInputTileProps) {
   const [draftValue, setDraftValue] = useState(value);
 
   useEffect(() => {
@@ -422,54 +522,98 @@ function DistanceInputRow({
   const level = getClearanceLevel(parsedValue);
   const levelStyles = getLevelStyles(level);
 
+  const isStopLevel = level === "stop";
+  const isCautionLevel = level === "caution";
+  const hasValue = value.trim().length > 0;
+
   const commitDraftValue = () => {
     onChangeText(draftValue.trim());
   };
 
-  const isStopLevel = level === "stop";
-  const isCautionLevel = level === "caution";
+  const statusLabel = hasValue ? levelStyles.label : "Not checked";
 
   return (
     <View
       style={{
-        padding: 9,
+        padding: 8,
         borderRadius: 11,
         backgroundColor: "#ffffff",
-        borderWidth: 1,
+        borderWidth: emphasized ? 2 : 1,
         borderColor:
-          isStopLevel || isCautionLevel ? levelStyles.borderColor : "#e2e8f0",
+          isStopLevel || isCautionLevel
+            ? levelStyles.borderColor
+            : emphasized
+              ? "#0ea5e9"
+              : "#e2e8f0",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        <View style={{ flex: 1 }}>
+      <View>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
           <Text
             style={{
-              fontSize: 12,
-              fontWeight: "600",
+              fontSize: 11,
+              fontWeight: "800",
               color: "#0f172a",
             }}
           >
             {label}
           </Text>
 
-          <Text
-            style={{
-              marginTop: 2,
-              fontSize: 10,
-              fontWeight: isStopLevel ? "800" : "600",
-              color: levelStyles.textColor,
-            }}
-          >
-            {value.trim() ? levelStyles.label : "Not checked"}
-          </Text>
+          {emphasized ? (
+            <View
+              style={{
+                marginLeft: 5,
+                minWidth: 44,
+                paddingVertical: 2,
+                paddingHorizontal: 7,
+                borderRadius: 999,
+                backgroundColor: "#e0f2fe",
+                borderWidth: 1,
+                borderColor: "#38bdf8",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <Text
+                numberOfLines={1}
+                allowFontScaling={false}
+                style={{
+                  fontSize: 8,
+                  fontWeight: "900",
+                  color: "#075985",
+                  letterSpacing: 0.2,
+                }}
+              >
+                CHECK
+              </Text>
+            </View>
+          ) : null}
         </View>
 
+        <Text
+          style={{
+            marginTop: 3,
+            fontSize: 9,
+            fontWeight: isStopLevel ? "900" : "700",
+            color: hasValue ? levelStyles.textColor : "#94a3b8",
+          }}
+        >
+          {statusLabel}
+        </Text>
+      </View>
+      <View
+        style={{
+          marginTop: 6,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
         <TextInput
           value={draftValue}
           onChangeText={setDraftValue}
@@ -479,21 +623,48 @@ function DistanceInputRow({
           inputMode="numeric"
           returnKeyType="done"
           blurOnSubmit={true}
+          placeholder="—"
+          placeholderTextColor="#94a3b8"
           style={{
-            width: 82,
+            flex: 1,
             paddingVertical: 7,
-            paddingHorizontal: 9,
-            borderRadius: 10,
-            backgroundColor: "white",
+            paddingHorizontal: 8,
+            borderRadius: 9,
+            backgroundColor: "#f8fafc",
             borderWidth: 1,
-            borderColor: levelStyles.borderColor,
+            borderColor: hasValue ? levelStyles.borderColor : "#cbd5e1",
             fontSize: 14,
             fontWeight: isStopLevel ? "900" : "700",
             color: "#0f172a",
             textAlign: "center",
           }}
         />
+
+        <Text
+          style={{
+            marginLeft: 5,
+            fontSize: 10,
+            fontWeight: "700",
+            color: "#64748b",
+          }}
+        >
+          in
+        </Text>
       </View>
+
+      {emphasized && hint ? (
+        <Text
+          style={{
+            marginTop: 6,
+            fontSize: 9,
+            fontWeight: "600",
+            color: "#0369a1",
+            lineHeight: 12,
+          }}
+        >
+          {hint}
+        </Text>
+      ) : null}
     </View>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { ParkingType } from "../constants/parkingGuidance";
 import { CampsiteType } from "./CampsiteSetupCard";
 import { SiteObstacle } from "./SiteObstacleSelector";
@@ -41,9 +41,18 @@ function getShortScenarioLabel(scenario: Scenario) {
 }
 
 function getCampsiteLabel(campsiteType: CampsiteType) {
-  if (campsiteType === "straightBackIn") return "Straight back-in campsite";
-  if (campsiteType === "angledSite") return "Angled campsite";
-  if (campsiteType === "tightCampgroundRoad") return "Tight campground road";
+  if (campsiteType === "straightBackIn") {
+    return "Straight back-in campsite";
+  }
+
+  if (campsiteType === "angledSite") {
+    return "Angled campsite";
+  }
+
+  if (campsiteType === "tightCampgroundRoad") {
+    return "Tight campground road";
+  }
+
   return "Narrow driveway";
 }
 
@@ -57,18 +66,9 @@ function getShortCampsiteLabel(campsiteType: CampsiteType) {
 function getObstacleLabels(obstacles: SiteObstacle[]) {
   const labels: string[] = [];
 
-  if (obstacles.includes("poleRight")) {
-    labels.push("Pole right");
-  }
-
-  if (obstacles.includes("treeLeft")) {
-    labels.push("Tree left");
-  }
-
-  if (obstacles.includes("lowBranch")) {
-    labels.push("Low branch");
-  }
-
+  if (obstacles.includes("poleRight")) labels.push("Pole right");
+  if (obstacles.includes("treeLeft")) labels.push("Tree left");
+  if (obstacles.includes("lowBranch")) labels.push("Low branch");
   if (obstacles.includes("tightHookupSide")) {
     labels.push("Tight hookup side");
   }
@@ -173,116 +173,129 @@ export function SetupReviewCard({
     scenario,
     obstacles,
   );
+
+  const summaryLine =
+    parkingType === "pull-through"
+      ? `${parkingTypeLabel} • Drive-through guidance`
+      : `${parkingTypeLabel} • ${backingSideLabel} • ${shortCampsiteLabel}`;
+
   return (
     <View
       style={{
         marginTop: 12,
-        borderRadius: 16,
-        backgroundColor: "#f1f5f9",
+        borderRadius: 14,
+        backgroundColor: "#f8fafc",
         borderWidth: 1,
-        borderColor: "#cbd5e1",
+        borderColor: "#dbe3ef",
         overflow: "hidden",
       }}
     >
-      {/* <TouchableOpacity
+      <TouchableOpacity
         onPress={() => setExpanded((current) => !current)}
-        activeOpacity={0.85}
+        activeOpacity={0.82}
         style={{
-          padding: 14,
+          padding: 12,
           backgroundColor: "#f8fafc",
         }}
       >
         <View
           style={{
             flexDirection: "row",
-            justifyContent: "space-between",
-            gap: 10,
             alignItems: "center",
           }}
         >
-          <View style={{ flex: 1 }}>
+          <View
+            style={{
+              flex: 1,
+              marginRight: 12,
+            }}
+          >
             <Text
               style={{
                 fontSize: 12,
-                fontWeight: "900",
+                fontWeight: "700",
                 color: "#334155",
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
+                letterSpacing: 0.2,
               }}
             >
-              Setup Review
-            </Text>
-
-            <Text
-              style={{
-                marginTop: 6,
-                fontSize: 14,
-                fontWeight: "900",
-                color: "#0f172a",
-                lineHeight: 19,
-              }}
-            >
-              {parkingType === "pull-through"
-                ? `${getParkingTypeLabel(parkingType)} • Drive-through guidance`
-                : `${getParkingTypeLabel(parkingType)} • ${getBackingSideLabel(
-                    backingSide,
-                  )} • ${getCampsiteLabel(campsiteType)}`}
+              Setup
             </Text>
 
             <Text
               style={{
                 marginTop: 4,
-                fontSize: 12,
-                fontWeight: "700",
-                color: "#475569",
-                lineHeight: 17,
+                fontSize: 13,
+                fontWeight: "600",
+                color: "#0f172a",
+                lineHeight: 18,
+              }}
+            >
+              {summaryLine}
+            </Text>
+
+            <Text
+              style={{
+                marginTop: 3,
+                fontSize: 11,
+                fontWeight: "400",
+                color: "#64748b",
+                lineHeight: 16,
               }}
             >
               {shortScenarioLabel} • {shortObstacleLabels}
             </Text>
           </View>
 
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "900",
-              color: "#334155",
-            }}
-          >
-            {expanded ? "⌃" : "⌄"}
-          </Text>
-        </View>
-
-        <Text
-          style={{
-            marginTop: 6,
-            fontSize: 11,
-            fontWeight: "800",
-            color: "#64748b",
-          }}
-        >
-          {expanded ? "Tap to hide details" : "Tap for details"}
-        </Text>
-      </TouchableOpacity> */}
-
-      {expanded ? (
-        <View style={{ padding: 14, paddingTop: 0 }}>
           <View
             style={{
-              marginTop: 10,
-              padding: 12,
+              width: 28,
+              height: 28,
               borderRadius: 14,
-              backgroundColor: "white",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#eef2f7",
               borderWidth: 1,
-              borderColor: "#e2e8f0",
+              borderColor: "#cbd5e1",
+            }}
+          >
+            <Text
+              allowFontScaling={false}
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: "#475569",
+                textAlign: "center",
+                lineHeight: 18,
+                includeFontPadding: false,
+                transform: [{ translateY: -1 }],
+              }}
+            >
+              {expanded ? "−" : "+"}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {expanded ? (
+        <View
+          style={{
+            paddingHorizontal: 12,
+            paddingBottom: 12,
+          }}
+        >
+          <View
+            style={{
+              paddingTop: 10,
+              borderTopWidth: 1,
+              borderTopColor: "#e2e8f0",
             }}
           >
             <Text
               style={{
-                fontSize: 15,
-                fontWeight: "900",
+                fontSize: 13,
+                fontWeight: "600",
                 color: "#0f172a",
-                lineHeight: 20,
+                lineHeight: 18,
               }}
             >
               {parkingType === "pull-through"
@@ -292,11 +305,11 @@ export function SetupReviewCard({
 
             <Text
               style={{
-                marginTop: 6,
-                fontSize: 13,
-                fontWeight: "800",
-                color: "#334155",
-                lineHeight: 18,
+                marginTop: 4,
+                fontSize: 12,
+                fontWeight: "400",
+                color: "#475569",
+                lineHeight: 17,
               }}
             >
               {parkingType === "pull-through"
@@ -306,21 +319,22 @@ export function SetupReviewCard({
 
             <Text
               style={{
-                marginTop: 6,
-                fontSize: 13,
-                fontWeight: "700",
+                marginTop: 4,
+                fontSize: 12,
+                fontWeight: "400",
                 color: "#475569",
-                lineHeight: 18,
+                lineHeight: 17,
               }}
             >
               Obstacles: {obstacleLabels}
             </Text>
           </View>
+
           <View
             style={{
               marginTop: 10,
-              padding: 12,
-              borderRadius: 14,
+              padding: 10,
+              borderRadius: 12,
               backgroundColor: "#eff6ff",
               borderWidth: 1,
               borderColor: "#bfdbfe",
@@ -328,22 +342,21 @@ export function SetupReviewCard({
           >
             <Text
               style={{
-                fontSize: 12,
-                fontWeight: "900",
+                fontSize: 11,
+                fontWeight: "600",
                 color: "#1d4ed8",
-                textTransform: "uppercase",
-                letterSpacing: 0.4,
+                letterSpacing: 0.2,
               }}
             >
-              Coach Reminder
+              Coach reminder
             </Text>
 
             <Text
               style={{
-                marginTop: 6,
-                fontSize: 13,
-                fontWeight: "800",
-                color: "#0f172a",
+                marginTop: 5,
+                fontSize: 12,
+                fontWeight: "400",
+                color: "#1e3a8a",
                 lineHeight: 18,
               }}
             >
